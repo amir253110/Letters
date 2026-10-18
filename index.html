@@ -1,0 +1,2291 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>Aytilmagan xatlar</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* ---------- Design tokens (warm light palette by default) ---------- */
+:root{
+  --bg:#faf6f1; --card:#ffffff; --text:#2d2723; --hint:#75695f;
+  --accent:#c9734f; --accent-strong:#a2532f; --accent-soft:rgba(201,115,79,.13);
+  --btn:#b05b38; --btn-text:#ffffff; --chip-on-bg:#a2532f; --chip-on-text:#ffffff;
+  --border:rgba(60,40,30,.10); --shadow:0 2px 12px rgba(60,40,30,.07);
+  --danger:#b8443a; --ok:#4f8a5f;
+  --sat:0px; --sab:0px; --sal:0px; --sar:0px; --radius:16px;
+}
+:root[data-scheme="dark"]{
+  --bg:#1b1715; --card:#27211e; --text:#f2ebe5; --hint:#a99d94;
+  --accent:#e0956f; --accent-strong:#f0b596; --accent-soft:rgba(224,149,111,.16);
+  --btn:#d98a63; --btn-text:#1b1715; --chip-on-bg:#e0956f; --chip-on-text:#1b1715;
+  --border:rgba(255,255,255,.09); --shadow:0 2px 14px rgba(0,0,0,.35);
+  --danger:#e0705f; --ok:#7fb88d;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  -webkit-text-size-adjust:100%}
+body{min-height:100vh;padding-left:max(var(--sal),env(safe-area-inset-left));padding-right:max(var(--sar),env(safe-area-inset-right));overscroll-behavior-y:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0;text-align:inherit}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:12px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+/* ---------- App bar ---------- */
+.appbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;
+  padding:calc(6px + max(var(--sat),env(safe-area-inset-top))) 12px 6px 16px;background:var(--bg)}
+.appbar h1{flex:1;min-width:0;margin:0;font-size:17px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none}
+.icon-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.help-pill{min-height:44px;padding:0 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:14px;font-weight:600;flex:none;white-space:nowrap}
+
+/* ---------- Layout & cards ---------- */
+main{padding:4px 16px calc(96px + max(var(--sab),env(safe-area-inset-bottom)));max-width:560px;margin:0 auto}
+main.no-tabs{padding-bottom:calc(40px + max(var(--sab),env(safe-area-inset-bottom)))}
+.view-enter{animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:12px 0;display:block;width:100%;text-align:left}
+.card.soft{background:var(--accent-soft);box-shadow:none}
+.card.inset{background:var(--bg);box-shadow:none}
+h2{font-size:24px;line-height:1.25;margin:4px 0 6px;font-weight:700}
+h3{font-size:16px;margin:0 0 10px;font-weight:650}
+p{margin:0 0 8px}
+.muted{color:var(--hint)} .small{font-size:13px} .center{text-align:center}
+.hero{padding:8px 2px 4px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.stack{display:grid;gap:10px}
+
+/* ---------- Buttons ---------- */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:14px;
+  font-weight:600;width:100%;text-decoration:none;text-align:center;transition:transform .15s ease,opacity .15s ease}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--btn);color:var(--btn-text)}
+.btn-big{min-height:58px;font-size:17px;border-radius:16px;margin:12px 0;box-shadow:var(--shadow)}
+.btn-soft{background:var(--accent-soft);color:var(--accent-strong)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger-soft{background:rgba(184,68,58,.12);color:var(--danger)}
+.card-link{font-weight:600;color:var(--accent-strong);min-height:56px}
+
+/* ---------- Pickers ---------- */
+.emoji-row{display:flex;justify-content:space-between;gap:6px}
+.emoji-btn{flex:1;min-height:52px;font-size:28px;line-height:1;border-radius:14px;background:var(--bg);text-align:center;transition:transform .2s ease,background .2s ease}
+.emoji-btn.on{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent);transform:scale(1.06)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:0 16px;border-radius:999px;background:var(--bg);font-size:14px;transition:background .2s ease}
+.chip.on{background:var(--chip-on-bg);color:var(--chip-on-text)}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:12px;margin:4px 4px 0 0}
+.seg{display:flex;background:var(--bg);border-radius:14px;padding:4px;gap:4px}
+.seg button{flex:1;min-height:44px;border-radius:10px;font-size:14px;font-weight:600;color:var(--hint);text-align:center;transition:background .2s ease}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+
+/* ---------- Inputs ---------- */
+.label{display:block;font-weight:600;margin:8px 2px}
+textarea,input[type=search],select{width:100%;border:1px solid var(--border);border-radius:14px;background:var(--card);padding:12px 14px;font-size:16px}
+#letter-text{min-height:220px;resize:none;border:0;box-shadow:var(--shadow);padding:16px;font-size:17px;line-height:1.65;overflow:hidden}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.filters label{font-size:13px;color:var(--hint);display:grid;gap:4px}
+select{min-height:44px;-webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--hint) 50%),linear-gradient(135deg,var(--hint) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;cursor:pointer}
+.switch-row input{width:24px;height:24px;accent-color:var(--accent);flex:none}
+
+/* ---------- Home stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin:0;padding:12px 6px;text-align:center;min-height:108px}
+.stat b{font-size:28px;line-height:1.1}
+.stat span{font-size:13px;color:var(--hint)}
+.ring{width:56px;height:56px}
+.ring-bg{fill:none;stroke:var(--accent-soft);stroke-width:6}
+.ring-fg{fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+.ring text{fill:var(--text);font-size:14px;font-weight:700}
+
+/* ---------- Letters ---------- */
+.month{font-size:13px;font-weight:700;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;margin:20px 4px 4px}
+.letter-item{min-height:44px}
+.letter-item .preview{margin:6px 0 2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.letter-item.locked{background:var(--accent-soft);box-shadow:none}
+.letter-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:17px;line-height:1.7;margin-top:12px}
+.reply-card{background:linear-gradient(135deg,var(--accent-soft),rgba(0,0,0,0) 70%),var(--card)}
+.eyebrow{font-size:13px;font-weight:700;color:var(--accent-strong);text-transform:uppercase;letter-spacing:.05em}
+.reply-text{font-size:18px;line-height:1.6;margin:8px 0}
+
+/* ---------- Mood chart ---------- */
+.chart{width:100%;height:auto;display:block}
+.chart .grid{stroke:var(--border);stroke-width:1}
+.chart .line{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.chart .pt{fill:var(--card);stroke:var(--accent);stroke-width:2}
+.chart text{fill:var(--hint);font-size:10px}
+
+/* ---------- Care ---------- */
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.check{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 12px;border-radius:14px;background:var(--bg)}
+.check .box{width:28px;height:28px;border-radius:9px;border:2px solid var(--hint);display:grid;place-items:center;flex:none;transition:background .2s ease,border-color .2s ease}
+.check .box svg{width:18px;height:18px;stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:24;transition:stroke-dashoffset .3s ease .05s}
+.check.on .box{background:var(--ok);border-color:var(--ok);animation:pop .35s ease}
+.check.on .box svg{stroke-dashoffset:0}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+.week{display:flex;justify-content:space-between;list-style:none;margin:0 0 12px;padding:0}
+.day{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--hint)}
+.dot{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);position:relative;overflow:hidden;display:block}
+.dot i{position:absolute;inset:0;background:var(--accent);border-radius:50%}
+.day.today .dot{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--accent)}
+
+/* ---------- Tab bar ---------- */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:var(--card);box-shadow:0 -1px 0 var(--border);
+  padding:6px max(var(--sar),env(safe-area-inset-right)) calc(6px + max(var(--sab),env(safe-area-inset-bottom))) max(var(--sal),env(safe-area-inset-left))}
+.tabbar button{flex:1;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;color:var(--hint);text-align:center}
+.tabbar button[aria-selected="true"]{color:var(--accent-strong);font-weight:600}
+.tabbar svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Bottom sheet, toast ---------- */
+.sheet-backdrop{position:fixed;inset:0;background:rgba(20,12,8,.45);z-index:50;opacity:0;transition:opacity .25s ease}
+.sheet-backdrop.open{opacity:1}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--card);border-radius:22px 22px 0 0;max-width:560px;margin:0 auto;
+  padding:12px 20px calc(20px + max(var(--sab),env(safe-area-inset-bottom)));transform:translateY(100%);transition:transform .3s ease;max-height:88vh;overflow:auto}
+.sheet.open{transform:none}
+.grabber{width:40px;height:5px;border-radius:3px;background:var(--border);margin:0 auto 12px}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(88px + max(var(--sab),env(safe-area-inset-bottom)));z-index:70;max-width:420px;margin:0 auto;
+  background:var(--text);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:14px;text-align:center;opacity:0;transform:translateY(8px);
+  transition:opacity .25s ease,transform .25s ease;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+
+/* ---------- PIN lock ---------- */
+.pin{position:fixed;inset:0;z-index:80;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(24px + var(--sat)) 24px calc(24px + var(--sab));text-align:center}
+.pin-dots{display:flex;gap:16px;margin:18px 0 26px}
+.pin-dots span{width:14px;height:14px;border-radius:50%;border:2px solid var(--hint);transition:background .15s ease}
+.pin-dots span.on{background:var(--accent);border-color:var(--accent)}
+.pin.shake .pin-dots{animation:shake .4s ease}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.keypad{display:grid;grid-template-columns:repeat(3,72px);gap:14px}
+.keypad button{height:72px;border-radius:50%;background:var(--card);font-size:26px;box-shadow:var(--shadow);text-align:center}
+.pin-links{display:flex;gap:16px;margin-top:20px}
+.link-btn{min-height:44px;padding:0 10px;color:var(--accent-strong);font-weight:600}
+
+/* ---------- Empty & skeleton ---------- */
+.empty{text-align:center;padding:40px 16px}
+.empty .big{font-size:48px;line-height:1.2}
+.skel{border-radius:var(--radius);background:linear-gradient(90deg,var(--card) 25%,var(--accent-soft) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.3s infinite linear;margin:12px 0}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+
+/* ---------- Princess ---------- */
+.p-head{display:flex;gap:12px;align-items:flex-start}
+.avatar{width:48px;height:48px;border-radius:50%;background:var(--accent-soft);display:grid;place-items:center;font-size:26px;flex:none}
+.chat{display:flex;flex-direction:column;gap:8px;margin:14px 0 8px}
+.bubble-row{display:flex}
+.bubble-row.me{justify-content:flex-end}
+.bubble{max-width:84%;padding:10px 14px;border-radius:18px;background:var(--card);box-shadow:var(--shadow);white-space:pre-wrap;overflow-wrap:anywhere;font-size:15.5px;line-height:1.45;animation:fade .2s ease}
+.bubble-row.p .bubble{border-bottom-left-radius:6px}
+.bubble-row.me .bubble{background:var(--chip-on-bg);color:var(--chip-on-text);border-bottom-right-radius:6px}
+.bubble time{display:block;font-size:11px;opacity:.7;margin-top:2px;text-align:right}
+.help-bubble{display:grid;gap:8px;white-space:normal;background:var(--accent-soft)!important;box-shadow:none}
+.typing-row .bubble{display:flex;gap:5px;padding:14px 16px}
+.typing-row i{width:7px;height:7px;border-radius:50%;background:var(--hint);animation:blink 1.2s infinite ease-in-out}
+.typing-row i:nth-child(2){animation-delay:.2s}.typing-row i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25;transform:none}40%{opacity:1;transform:translateY(-3px)}}
+.chatbar{position:fixed;left:0;right:0;z-index:19;bottom:calc(64px + max(var(--sab),env(safe-area-inset-bottom)));background:var(--bg);border-top:1px solid var(--border);
+  padding:8px max(12px,var(--sar)) 8px max(12px,var(--sal))}
+.chatbar-in{max-width:560px;margin:0 auto}
+body.kb-open .tabbar{display:none}
+body.kb-open .chatbar{bottom:max(var(--sab),env(safe-area-inset-bottom))}
+.quick{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.quick::-webkit-scrollbar{display:none}
+.quick .chip{flex:none;white-space:nowrap}
+.chatform{display:flex;gap:8px}
+.chatform input{flex:1;min-width:0;min-height:48px;border-radius:24px;border:1px solid var(--border);background:var(--card);padding:0 16px;font-size:16px}
+.send{width:48px;height:48px;border-radius:50%;background:var(--btn);color:var(--btn-text);display:grid;place-items:center;flex:none}
+main.chat-mode{padding-bottom:calc(64px + 128px + max(var(--sab),env(safe-area-inset-bottom)))}
+input.field{width:100%;border:1px solid var(--border);border-radius:14px;background:var(--card);padding:0 14px;font-size:16px;min-height:48px}
+.page-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}
+.page-row .btn{width:auto}
+.tabbar .tl{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+
+@media (max-width:359px){
+  .tabbar button{font-size:10px}
+  .help-pill .long{display:none}
+  .keypad{grid-template-columns:repeat(3,64px)} .keypad button{height:64px}
+  .emoji-btn{font-size:24px}
+  h2{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <button id="back-btn" class="icon-btn" data-action="back" aria-label="Orqaga" hidden>
+    <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <h1 id="title">Aytilmagan xatlar</h1>
+  <button class="help-pill" data-action="help" aria-haspopup="dialog">🤍 Yordam<span class="long"> kerakmi?</span></button>
+  <button class="icon-btn" data-action="settings" aria-label="Sozlamalar">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main id="view" aria-live="polite" aria-busy="true">
+  <!-- Skeleton shown while storage loads -->
+  <div class="skel" style="height:70px"></div>
+  <div class="skel" style="height:58px"></div>
+  <div class="skel" style="height:120px"></div>
+  <div class="skel" style="height:108px"></div>
+</main>
+
+<nav class="tabbar" id="tabbar" role="tablist" aria-label="Asosiy bo'limlar">
+  <button role="tab" data-action="tab" data-tab="home" aria-selected="true">
+    <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="tl">Bosh sahifa</span></button>
+  <button role="tab" data-action="tab" data-tab="letters" aria-selected="false">
+    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="tl">Xatlar</span></button>
+  <button role="tab" data-action="tab" data-tab="mood" aria-selected="false">
+    <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M3 21h18"/></svg><span class="tl">Kayfiyat</span></button>
+  <button role="tab" data-action="tab" data-tab="care" aria-selected="false">
+    <svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg><span class="tl">G'amxo'rlik</span></button>
+  <button role="tab" data-action="tab" data-tab="princess" aria-selected="false">
+    <svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg><span class="tl" id="tab-p-label">Princess</span></button>
+</nav>
+
+<!-- Help sheet (always reachable from the header) -->
+<div id="sheet-backdrop" class="sheet-backdrop" data-action="close-help" hidden></div>
+<div id="help-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+  <div class="grabber" aria-hidden="true"></div>
+  <h2 id="help-title">Yordam kerakmi? 🤍</h2>
+  <p>Ba'zan og'irlik juda kuchli bo'ladi. Bu sening aybing emas. Yordam so'rash — kuchlilik belgisi.</p>
+  <div class="card inset">
+    <h3>Yaqin odamingga yoz yoki qo'ng'iroq qil</h3>
+    <p class="muted small">Do'st, oila a'zosi yoki ishongan har qanday odam. Uzun gap shart emas — "menga hozir qiyin" deyish yetarli.</p>
+    <button class="btn btn-primary" data-action="share-friend">💬 Kimgadir xabar yuborish</button>
+  </div>
+  <div class="card inset">
+    <h3>Psixolog bilan gaplashish</h3>
+    <p class="muted small">Mutaxassis bilan suhbat yo'qotish og'rig'ini yengillatishga yordam beradi. Bu ham o'zingga g'amxo'rlik.</p>
+  </div>
+  <div class="card inset">
+    <h3>Agar o'zingni xavfsiz his qilmasang</h3>
+    <p class="muted small">Hayotingga xavf bor deb o'ylasang, hoziroq tez yordamga qo'ng'iroq qil.</p>
+    <a class="btn btn-danger" href="tel:103">📞 103 — Tez tibbiy yordam</a>
+    <p class="muted small" style="margin-top:8px">Agar qo'ng'iroq oynasi ochilmasa, telefoningda 103 raqamini ter.</p>
+  </div>
+  <button class="btn btn-soft" data-action="close-help">Yopish</button>
+</div>
+
+<!-- PIN lock overlay -->
+<div id="pin" class="pin" role="dialog" aria-modal="true" aria-labelledby="pin-title" hidden>
+  <div style="font-size:40px" aria-hidden="true">🔒</div>
+  <h2 id="pin-title">PIN-kodni kirit</h2>
+  <p id="pin-sub" class="muted small"></p>
+  <div class="pin-dots" id="pin-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+  <div class="keypad" id="keypad">
+    <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
+    <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
+    <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
+    <span></span><button data-key="0">0</button><button data-key="del" aria-label="O'chirish">⌫</button>
+  </div>
+  <div class="pin-links">
+    <button class="link-btn" id="pin-forgot">PINni unutdim</button>
+    <button class="link-btn" id="pin-cancel">Bekor qilish</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= Telegram bridge ================= */
+  var tg = (window.Telegram && window.Telegram.WebApp) || null;
+  // initData is only non-empty when the page is opened from a bot inside Telegram
+  var inTG = !!(tg && tg.initData);
+  function ver(v) { try { return !!(inTG && tg.isVersionAtLeast(v)); } catch (e) { return false; } }
+
+  /* ================= Constants ================= */
+  var DAY = 86400000;
+  var MAX_LEN = 10000;
+  var MOODS = [
+    { v: 1, e: '😞', l: "Juda og'ir" },
+    { v: 2, e: '😔', l: "Og'ir" },
+    { v: 3, e: '😐', l: "O'rtacha" },
+    { v: 4, e: '🙂', l: 'Yengilroq' },
+    { v: 5, e: '😊', l: 'Yaxshi' }
+  ];
+  var TAGS = [
+    { id: 'sogin', l: "sog'inch" }, { id: 'gazab', l: "g'azab" }, { id: 'qaygu', l: "qayg'u" },
+    { id: 'umid', l: 'umid' }, { id: 'yolgiz', l: "yolg'izlik" }, { id: 'minnat', l: 'minnatdorlik' }
+  ];
+  var TAG_IDS = TAGS.map(function (t) { return t.id; });
+  var CARE_ITEMS = ['🍲 Biror narsa yedim', '🍵 Suv yoki choy ichdim', "🌿 Toza havoda bo'ldim", '🤝 Bir kishiga "menga qiyin" dedim'];
+  var MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
+  var WEEKDAYS = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+  var WD_SHORT = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
+  var SHARE_TEXT = "Salom. Menga hozir biroz qiyin. Vaqting bo'lsa, gaplashsak bo'ladimi?";
+
+  /* ================= Reply pool (neutral companion voice only) =================
+     Rules: never speak as the lost person, never promise they will come back. */
+  var REPLIES = {
+    sogin: [
+      "Sog'inch — yuragingda hali ham mehr borligining belgisi. Uni his qilayotganing uchun o'zingni ayblama.",
+      "Kimnidir sog'inish og'ir, ayniqsa kechqurunlari. Bugun shu his bilan yolg'iz emassan — bu so'zlar xavfsiz joyda saqlandi.",
+      "Bu xatda qancha mehr borligi sezilib turibdi. O'sha mehrning bir qismini bugun o'zingga ham ko'rsat.",
+      "Xotiralar to'lqin kabi keladi va ketadi. Hozirgi to'lqin qanchalik baland bo'lmasin, u ham asta pasayadi.",
+      "Sog'inchni yozib chiqarganing — katta qadam. Ichingda saqlagandan ko'ra so'zga aylantirgan yengilroq.",
+      "Ba'zi kunlar sog'inch kuchliroq bo'ladi. Bu orqaga ketganing emas — shunchaki shunday kun."
+    ],
+    gazab: [
+      "G'azablanishga haqqing bor. Bu his ham yo'qotishning bir qismi, uni yashirish shart emas.",
+      "Jahl ko'pincha og'riqni himoya qiladi. Uni shu yerda, hech kimga zarar bermasdan chiqarganing yaxshi bo'ldi.",
+      "So'zlaring keskin bo'lsa ham, bu yerda hukm yo'q. Yozib bo'lgach, sekin uch marta chuqur nafas olib ko'r.",
+      "Adolatsizlik hissi juda og'ir yuk. Uni bir o'zing ko'tarib yurishing shart emas.",
+      "G'azab kuchini qisqa sayrga yoki derazani ochib toza havo olishga yo'naltirib ko'rsang-chi?",
+      "Hamma narsani darhol kechirishga shoshilma. Avval o'z his-tuyg'ularingni tan ol — sen hozir aynan shuni qilyapsan."
+    ],
+    qaygu: [
+      "Qayg'u — sevganingning narxi. Bugun u og'ir bo'lsa, o'zingga odatdagidan ham yumshoqroq munosabatda bo'l.",
+      "Yig'lagisi kelsa, yig'la. Ko'z yosh zaiflik emas — yurak o'zini shunday yengillatadi.",
+      "Qayg'uning aniq muddati yo'q. Sen o'z sur'atingda yuraverishing mumkin.",
+      "Bugun faqat eng zarur narsalarni qilsang ham yetarli. Qolganini keyinga qoldirsang bo'ladi.",
+      "Bu so'zlarni yozish oson bo'lmagandir. Shu jasoratingni o'zing ham qadrla.",
+      "Og'riq hozir hamma narsani to'sib qo'ygandek tuyulishi mumkin. Lekin sen hali shu yerdasan, va bu muhim."
+    ],
+    umid: [
+      "Xatingda kichik bir nur bor. Uni ehtiyot qil — umid sekin, lekin ishonchli o'sadi.",
+      "Oldinga qarashga jur'at qilganing go'zal. Yangi kunlar o'zgacha ma'no bilan kelishi mumkin.",
+      "Umid qilish xotiralarni unutish degani emas. Ikkalasi ham yuragingda birga yashashi mumkin.",
+      "Bugungi kichik yaxshilikni eslab qol. Og'irroq kunda unga qaytib kelasan.",
+      "Bir qadam ham qadam. Sen allaqachon yo'ldasan."
+    ],
+    yolgiz: [
+      "Yolg'izlik hissi juda og'ir. Bugun bitta yaqin odamga qisqa xabar yozib ko'rsang-chi? Hatto \"salom\" ham yetarli.",
+      "Seni tushunadigan odamlar bor, garchi hozir ular uzoqdek tuyulsa ham. Kimgadir \"menga qiyin\" deyish — kuchlilik.",
+      "Yolg'iz his qilyapsan, lekin shu xatni yozib, o'zing bilan bog'landing. Bu ham bir aloqa.",
+      "Kechqurunlari yolg'izlik kuchayadi. Iliq choy, yumshoq yorug'lik va tinch musiqa biroz yengillik berishi mumkin.",
+      "Ko'p odamlar shunday yo'qotishni boshidan kechirgan va asta-sekin yorug'likka chiqqan. Sen ham o'z yo'lingni topasan.",
+      "Agar gaplashadigan odam topish qiyin bo'lsa, psixolog bilan suhbat ham yaxshi yo'l. Yordam so'rash — jasorat."
+    ],
+    minnat: [
+      "Minnatdorlik yo'qotish ichida ham iliq joy topadi. Bu xotiralar seni boyitgan.",
+      "Birga o'tgan yaxshi lahzalar hech qayerga yo'qolmaydi — ular sening bir qismingga aylangan.",
+      "Rahmat aytishni bilgan yurak — kuchli yurak. Bu iliqlikni bugun o'zingga ham ulash.",
+      "Shukronalik og'riqni o'chirmaydi, lekin uning yonida yorug'lik yoqadi. Sen buni his qila olding.",
+      "Yaxshi xotiralarni yozib qo'yganing ajoyib. Ular og'ir kunlarda senga tayanch bo'ladi."
+    ],
+    low: [
+      "Bugun juda og'ir kun ekan. Hech narsani hal qilishing shart emas — faqat nafas ol va shu kunni o'tkaz.",
+      "O'zingga kichik g'amxo'rlik qil: bir stakan suv, yengil ovqat, bir oz dam. Kichik narsalar ham muhim.",
+      "Og'ir his-tuyg'ular abadiy emas, garchi hozir shunday tuyulsa ham. Sening so'zlaring eshitildi.",
+      "Agar og'irlik ko'p kun davom etsa, ishongan odamingga yoki psixologga aytib ko'r. Bunda uyaladigan hech narsa yo'q.",
+      "Bugun o'zingga eng yaqin do'stingga gapirgandek yumshoq gapir. Sen bunga loyiqsan."
+    ],
+    mid: [
+      "O'rtacha kunlar ham qadrli. Ular yurakka tinchlanish uchun joy beradi.",
+      "Bugun hislaring aralash bo'lsa, bu tabiiy. Hammasini birdaniga tushunish shart emas.",
+      "Yozganing uchun rahmat. Har bir xat — o'zingni biroz yaxshiroq tushunish yo'lidagi qadam.",
+      "Bugun o'zing uchun bitta kichik yoqimli ish qil: sevimli choy, qisqa sayr yoki yoqimli qo'shiq."
+    ],
+    high: [
+      "Bugun biroz yengilroq ekani quvonarli. Bu hisni sezib, uni qadrla.",
+      "Yaxshi kunlar unutganingni anglatmaydi. Sen shunchaki yashashda davom etyapsan, va bu to'g'ri.",
+      "Bugungi kuchingni eslab qol. U sening ichingda doim bor.",
+      "Yengillik his qilganingda o'zingni ayblama. Quvonch ham, qayg'u ham yonma-yon yashashi mumkin."
+    ],
+    general: [
+      "Yuragingdagini so'zga aylantirding. Bu oson emas, va sen buni qilding.",
+      "Bu xat endi xavfsiz joyda saqlandi. Unga istagan vaqtingda qaytishing mumkin.",
+      "Ba'zi so'zlar aytilmay qoladi, lekin yozilganda yengillashadi. Bugun sen shunday qilding.",
+      "O'zingga vaqt ber. Shifo to'g'ri chiziq bo'ylab emas, to'lqin kabi keladi.",
+      "Hozir nima his qilsang ham — u haqiqiy va muhim. Sen shu yerdasan, va bu yetarli."
+    ],
+    safety: [
+      "Yozganlaringdan sening hozir juda og'ir holatda ekaning sezilyapti. Sen muhimsan. Iltimos, hoziroq ishongan bir odamingga yoz yoki qo'ng'iroq qil. Xavf bo'lsa — 103.",
+      "Bu og'riqni bir o'zing ko'tarishing shart emas. Hozir yaqin bir odamga \"menga juda qiyin\" deb yoz. O'zingni xavfsiz his qilmasang, 103 ga qo'ng'iroq qil."
+    ]
+  };
+
+  // Keyword hints (Uzbek + a few Russian forms). Text is normalized before matching.
+  var KEYWORDS = {
+    sogin: ["sog'in", 'sogin', 'соскуч', 'скуча'],
+    gazab: ["g'azab", 'gazab', 'jahl', 'nafrat', 'adolatsiz', 'xafa qild', 'зл', 'ненави'],
+    qaygu: ["qayg'u", 'qaygu', "yig'la", 'yigla', "og'ri", 'azob', 'alam', "g'am", 'плач', 'больно', 'груст'],
+    umid: ['umid', 'ertaga', "yaxshi bo'l", 'yangi hayot', 'надежд'],
+    yolgiz: ["yolg'iz", 'yolgiz', 'hech kim', 'tashlab ket', 'одинок', 'никого'],
+    minnat: ['rahmat', 'minnatdor', 'shukr', 'спасибо', 'благодар']
+  };
+  var RISK = ["o'lgim kel", 'olgim kel', "o'zimni o'ldir", 'ozimni oldir', 'yashagim kelma', 'yashashni xohlama',
+    "hayotdan to'yd", "o'zimga zarar", "o'z joniga", 'не хочу жить', 'покончить', 'убить себя', 'суицид',
+    "jonimga qasd", 'chiday olmayapman', 'chidolmayapman', "yashashdan ma'no", "yashashning ma'nosi yo'q", 'hammasini tugatmoqchi',
+    "yo'q bo'lib ketgim", "g'oyib bo'lgim", 'tomirimni kes', "o'zimni kesdim", 'хочу умереть', 'не могу больше жить'];
+
+  /* ================= Helpers ================= */
+  function $(s, r) { return (r || document).querySelector(s); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function fmtDate(ts) { var d = new Date(ts); return d.getDate() + '-' + MONTHS[d.getMonth()] + ', ' + d.getFullYear(); }
+  function fmtTime(ts) { var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function normalize(s) { return String(s).toLowerCase().replace(/[ʻʼ’‘`´]/g, "'"); }
+  function moodOf(v) { return MOODS[v - 1] || null; }
+  function tagLabel(id) { var t = TAGS.filter(function (x) { return x.id === id; })[0]; return t ? t.l : id; }
+  function num(v) { return typeof v === 'number' && isFinite(v) ? v : null; }
+  function avg(a) { return a.length ? a.reduce(function (s, x) { return s + x; }, 0) / a.length : null; }
+  function isLocked(l) { return !!(l.unlockAt && l.unlockAt > Date.now()); }
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+
+  var haptic = {
+    impact: function (s) { if (ver('6.1')) try { tg.HapticFeedback.impactOccurred(s || 'light'); } catch (e) {} },
+    notify: function (t) { if (ver('6.1')) try { tg.HapticFeedback.notificationOccurred(t); } catch (e) {} },
+    select: function () { if (ver('6.1')) try { tg.HapticFeedback.selectionChanged(); } catch (e) {} }
+  };
+
+  // Telegram confirm with a browser fallback
+  function confirmBox(msg) {
+    return new Promise(function (resolve) {
+      if (ver('6.2')) {
+        try { tg.showConfirm(msg, function (ok) { resolve(!!ok); }); return; } catch (e) {}
+      }
+      resolve(window.confirm(msg));
+    });
+  }
+
+  /* ================= Storage =================
+     Primary: Telegram CloudStorage (private per user, 4096 chars per value).
+     Fallback/cache: localStorage, then in-memory. Each doc is saved as {ts,data};
+     on load the newer copy wins and the other side is re-synced. */
+  var Store = (function () {
+    var CHUNK = 3800, PREFIX = 'ax_', NAMES = ['letters', 'checks', 'settings', 'draft', 'princess', 'pchat'];
+    var mem = {}, cloud = false, chunkCount = {}, pending = {}, running = {};
+
+    function lsGet(k) {
+      if (Object.prototype.hasOwnProperty.call(mem, k)) return mem[k];
+      try { return window.localStorage.getItem(PREFIX + k); } catch (e) { return null; }
+    }
+    function lsSet(k, v) {
+      try { window.localStorage.setItem(PREFIX + k, v); delete mem[k]; } catch (e) { mem[k] = v; }
+    }
+    function lsRemove(k) { try { window.localStorage.removeItem(PREFIX + k); } catch (e) {} delete mem[k]; }
+
+    // Promise wrapper with timeout (CloudStorage callbacks never fire outside Telegram)
+    function cs(method) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return new Promise(function (resolve, reject) {
+        var done = false;
+        var t = setTimeout(function () { if (!done) { done = true; reject(new Error('timeout')); } }, 5000);
+        try {
+          tg.CloudStorage[method].apply(tg.CloudStorage, args.concat([function (err, res) {
+            if (done) return; done = true; clearTimeout(t);
+            if (err) reject(err instanceof Error ? err : new Error(String(err))); else resolve(res);
+          }]));
+        } catch (e) { if (!done) { done = true; clearTimeout(t); reject(e); } }
+      });
+    }
+
+    // Split long strings without breaking a UTF-16 surrogate pair (emoji)
+    function split(str) {
+      var out = [], i = 0;
+      while (i < str.length) {
+        var end = Math.min(i + CHUNK, str.length);
+        var c = str.charCodeAt(end - 1);
+        if (end < str.length && c >= 0xD800 && c <= 0xDBFF) end--;
+        out.push(str.slice(i, end)); i = end;
+      }
+      return out;
+    }
+
+    // Chunked values use two alternating "slots" (letters_0.. and letters_b0..).
+    // New chunks go to the unused slot, then the pointer key flips in one write,
+    // so closing the app mid-save can never leave a mix of old and new chunks.
+    function slotKey(name, slot, i) { return slot === 'b' ? name + '_b' + i : name + '_' + i; }
+
+    function cloudRead(name) {
+      return cs('getItem', name).then(function (v) {
+        if (!v) { chunkCount[name] = { n: 0, slot: null }; return null; }
+        var m = /^__chunks__:(\d+)(?::([ab]):(\d+))?$/.exec(v);
+        if (!m) { chunkCount[name] = { n: 0, slot: null }; return v; }
+        var n = +m[1], slot = m[2] || 'a', len = m[3] ? +m[3] : null, keys = [];
+        for (var i = 0; i < n; i++) keys.push(slotKey(name, slot, i));
+        return cs('getItems', keys).then(function (vals) {
+          chunkCount[name] = { n: n, slot: slot };
+          var s = keys.map(function (k) { return (vals && vals[k]) || ''; }).join('');
+          if (len != null && s.length !== len) throw new Error('chunk length mismatch');
+          return s;
+        });
+      });
+    }
+
+    function cloudWrite(name, str) {
+      var prev = chunkCount[name] || { n: 0, slot: null }, p, next = { n: 0, slot: null };
+      if (str.length <= CHUNK) {
+        p = cs('setItem', name, str);
+      } else {
+        var parts = split(str), slot = prev.slot === 'a' ? 'b' : 'a';
+        next = { n: parts.length, slot: slot };
+        // write chunks into the spare slot first, then flip the pointer
+        p = Promise.all(parts.map(function (part, i) { return cs('setItem', slotKey(name, slot, i), part); }))
+          .then(function () { return cs('setItem', name, '__chunks__:' + parts.length + ':' + slot + ':' + str.length); });
+      }
+      return p.then(function () {
+        chunkCount[name] = next;
+        // remove the previous slot's chunks (and any tail beyond the new count)
+        var stale = [];
+        if (prev.slot && prev.n) {
+          for (var i = 0; i < prev.n; i++) {
+            if (prev.slot !== next.slot || i >= next.n) stale.push(slotKey(name, prev.slot, i));
+          }
+        }
+        if (stale.length) return cs('removeItems', stale).catch(function () {});
+      });
+    }
+
+    // Serialize writes per key; only the latest pending value is written
+    function enqueue(name, s) {
+      pending[name] = s;
+      if (running[name]) return running[name];
+      running[name] = (function loop() {
+        if (pending[name] === undefined) { running[name] = null; return Promise.resolve(); }
+        var v = pending[name]; pending[name] = undefined;
+        return cloudWrite(name, v).catch(function () { /* local copy kept; resynced on next open */ }).then(loop);
+      })();
+      return running[name];
+    }
+
+    function init() {
+      if (!(ver('6.9') && tg.CloudStorage)) return Promise.resolve(false);
+      return cs('getKeys').then(function () { cloud = true; return true; }, function () { cloud = false; return false; });
+    }
+
+    function load(name) {
+      var local = null;
+      try { var s = lsGet(name); if (s) local = JSON.parse(s); } catch (e) { local = null; }
+      var remoteP = cloud ? cloudRead(name).then(function (s) { return s ? JSON.parse(s) : null; }).catch(function () { return null; })
+                          : Promise.resolve(null);
+      return remoteP.then(function (remote) {
+        if (remote && typeof remote.ts !== 'number') remote = null;
+        if (local && typeof local.ts !== 'number') local = null;
+        var pick = !remote ? local : !local ? remote : (remote.ts >= local.ts ? remote : local);
+        if (pick) {
+          var str = JSON.stringify(pick);
+          if (pick !== local) lsSet(name, str);
+          if (cloud && pick !== remote) enqueue(name, str);
+        }
+        return pick ? pick.data : undefined;
+      });
+    }
+
+    function save(name, data) {
+      var s = JSON.stringify({ ts: Date.now(), data: data });
+      lsSet(name, s);
+      return cloud ? enqueue(name, s) : Promise.resolve();
+    }
+
+    function wipe() {
+      NAMES.forEach(function (n) { lsRemove(n); pending[n] = undefined; });
+      try {
+        var ks = [];
+        for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf(PREFIX) === 0) ks.push(k); }
+        ks.forEach(function (k) { localStorage.removeItem(k); });
+      } catch (e) {}
+      mem = {}; chunkCount = {};
+      if (!cloud) return Promise.resolve();
+      return cs('getKeys').then(function (keys) {
+        return keys && keys.length ? cs('removeItems', keys) : null;
+      }).catch(function () {});
+    }
+
+    return { init: init, load: load, save: save, wipe: wipe, isCloud: function () { return cloud; }, _split: split };
+  })();
+
+  /* ================= State ================= */
+  var DEFAULT_SETTINGS = { theme: 'auto', reminders: true, pinHash: null, pinSalt: null, lastReplyId: null, princessName: 'Princess', pCheckins: true };
+  var S = { letters: [], checks: {}, settings: Object.assign({}, DEFAULT_SETTINGS), draft: null, princess: null, pchat: [] };
+  function persist(name) { return Store.save(name, S[name]); }
+
+  function sanitizeLetter(l) {
+    if (!l || typeof l.text !== 'string') return null;
+    var created = num(l.createdAt) || Date.now();
+    return {
+      id: typeof l.id === 'string' && l.id ? l.id.slice(0, 40) : uid(),
+      text: l.text.slice(0, MAX_LEN),
+      mood: [1, 2, 3, 4, 5].indexOf(l.mood) >= 0 ? l.mood : null,
+      tags: Array.isArray(l.tags) ? l.tags.filter(function (t) { return TAG_IDS.indexOf(t) >= 0; }) : [],
+      createdAt: created,
+      updatedAt: num(l.updatedAt) || created,
+      unlockAt: num(l.unlockAt),
+      reply: typeof l.reply === 'string' ? l.reply.slice(0, 600) : '',
+      flagged: !!l.flagged
+    };
+  }
+  function sanitizeCheck(v) {
+    v = v || {};
+    return {
+      items: [0, 1, 2, 3].map(function (i) { return !!(Array.isArray(v.items) && v.items[i]); }),
+      mood: [1, 2, 3, 4, 5].indexOf(v.mood) >= 0 ? v.mood : null,
+      // check-in answers from the Princess tab
+      notes: Array.isArray(v.notes) ? v.notes.filter(function (n) { return n && typeof n === 'object'; }).map(function (n) {
+        return { slot: ['morning', 'afternoon', 'evening', 'night'].indexOf(n.slot) >= 0 ? n.slot : 'morning',
+          mood: [1, 2, 3, 4, 5].indexOf(n.mood) >= 0 ? n.mood : null,
+          note: typeof n.note === 'string' ? n.note.slice(0, 300) : '', ts: num(n.ts) || Date.now() };
+      }).slice(-12) : []
+    };
+  }
+  function getCheck(k) { return S.checks[k] || { items: [false, false, false, false], mood: null, notes: [] }; }
+  function careCount(k) { return getCheck(k).items.filter(Boolean).length; }
+
+  /* ================= Derived data ================= */
+  function streakFrom(set) {
+    var d = new Date();
+    if (!set[dayKey(d)]) d = addDays(d, -1); // streak stays alive until the day ends
+    var n = 0;
+    while (set[dayKey(d)]) { n++; d = addDays(d, -1); }
+    return n;
+  }
+  function writingStreak() {
+    var set = {}; S.letters.forEach(function (l) { set[dayKey(new Date(l.createdAt))] = true; });
+    return streakFrom(set);
+  }
+  function careStreak() {
+    var set = {}; Object.keys(S.checks).forEach(function (k) { if (careCount(k) > 0) set[k] = true; });
+    return streakFrom(set);
+  }
+  function moodMap() {
+    var m = {};
+    function add(k, v) { if (v) (m[k] = m[k] || []).push(v); }
+    S.letters.forEach(function (l) { add(dayKey(new Date(l.createdAt)), l.mood); });
+    Object.keys(S.checks).forEach(function (k) { add(k, S.checks[k].mood); (S.checks[k].notes || []).forEach(function (n) { add(k, n.mood); }); });
+    return m;
+  }
+  function dailyMoods(n) {
+    var m = moodMap(), out = [], today = new Date();
+    for (var i = n - 1; i >= 0; i--) {
+      var d = addDays(today, -i), k = dayKey(d);
+      out.push({ key: k, date: d, avg: m[k] ? avg(m[k]) : null });
+    }
+    return out;
+  }
+  // Gentle rule: 5+ of the last 7 days with average mood <= 2
+  function lowMood() {
+    return dailyMoods(7).filter(function (d) { return d.avg != null && d.avg <= 2; }).length >= 5;
+  }
+
+  /* ================= Reply picker ================= */
+  function detectTags(text) {
+    var t = normalize(text);
+    return Object.keys(KEYWORDS).filter(function (k) {
+      return KEYWORDS[k].some(function (w) { return t.indexOf(w) >= 0; });
+    });
+  }
+  function hasRisk(text) {
+    var t = normalize(text);
+    return RISK.some(function (w) { return t.indexOf(w) >= 0; });
+  }
+  function pickReply(text, mood, tags) {
+    var flagged = hasRisk(text), groups;
+    if (flagged) groups = ['safety'];
+    else {
+      groups = tags.concat(detectTags(text)).filter(function (g, i, a) { return a.indexOf(g) === i; });
+      if (mood) groups.push(mood <= 2 ? 'low' : mood === 3 ? 'mid' : 'high');
+      if (!groups.length) groups = ['general'];
+    }
+    var last = S.settings.lastReplyId;
+    function cands(gs) {
+      var out = [];
+      gs.forEach(function (g) { (REPLIES[g] || []).forEach(function (t, i) { out.push({ id: g + ':' + i, t: t }); }); });
+      return out.filter(function (c) { return c.id !== last; });
+    }
+    var c = cands(groups);
+    if (!c.length) c = cands(['general']);
+    var r = c[Math.floor(Math.random() * c.length)];
+    return { id: r.id, text: r.t, flagged: flagged };
+  }
+
+  /* ================= Theme & insets ================= */
+  function applyTheme() {
+    var root = document.documentElement, pref = S.settings.theme;
+    var tp = (tg && tg.themeParams) || {};
+    var sysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var scheme = pref === 'auto' ? ((inTG && tg.colorScheme) || (sysDark ? 'dark' : 'light')) : pref;
+    root.setAttribute('data-scheme', scheme);
+    ['--bg', '--card', '--text', '--hint', '--btn', '--btn-text'].forEach(function (v) { root.style.removeProperty(v); });
+    if (pref === 'auto' && inTG) {
+      var set = function (v, c) { if (c) root.style.setProperty(v, c); };
+      set('--bg', tp.secondary_bg_color || tp.bg_color);
+      set('--card', tp.section_bg_color || tp.bg_color);
+      set('--text', tp.text_color);
+      set('--hint', tp.hint_color);
+      set('--btn', tp.button_color);
+      set('--btn-text', tp.button_text_color);
+    }
+    var bg = cssVar('--bg');
+    if (ver('6.1')) {
+      try { tg.setHeaderColor(ver('6.9') && isHex(bg) ? bg : 'secondary_bg_color'); } catch (e) {}
+      try { if (isHex(bg)) tg.setBackgroundColor(bg); } catch (e) {}
+    }
+    if (ver('7.10') && isHex(bg)) { try { tg.setBottomBarColor(bg); } catch (e) {} }
+    if (mainHandler) styleMainButton();
+  }
+  function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function isHex(c) { return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c); }
+
+  function applyInsets() {
+    var st = document.documentElement.style;
+    var a = (tg && tg.safeAreaInset) || {}, c = (tg && tg.contentSafeAreaInset) || {};
+    st.setProperty('--sat', ((a.top || 0) + (c.top || 0)) + 'px');
+    st.setProperty('--sab', ((a.bottom || 0) + (c.bottom || 0)) + 'px');
+    st.setProperty('--sal', ((a.left || 0) + (c.left || 0)) + 'px');
+    st.setProperty('--sar', ((a.right || 0) + (c.right || 0)) + 'px');
+  }
+
+  /* ================= MainButton & BackButton ================= */
+  var mainHandler = null;
+  function styleMainButton() {
+    var p = { is_visible: true, is_active: true };
+    var c = cssVar('--btn'), t = cssVar('--btn-text');
+    if (isHex(c)) p.color = c;
+    if (isHex(t)) p.text_color = t;
+    try { tg.MainButton.setParams(p); } catch (e) {}
+  }
+  function setMainButton(text, handler) {
+    if (!inTG) return;
+    var mb = tg.MainButton;
+    if (mainHandler) { try { mb.offClick(mainHandler); } catch (e) {} mainHandler = null; }
+    if (!text) { try { mb.hideProgress(); mb.hide(); } catch (e) {} return; }
+    try { mb.setText(text); } catch (e) {}
+    mainHandler = handler;
+    styleMainButton();
+    try { mb.onClick(handler); } catch (e) {}
+  }
+  function updateBack() {
+    var need = nav.stack.length > 0 || sheetOpen();
+    if (ver('6.1')) {
+      try { need ? tg.BackButton.show() : tg.BackButton.hide(); } catch (e) {}
+      $('#back-btn').hidden = true;
+    } else {
+      $('#back-btn').hidden = nav.stack.length === 0;
+    }
+  }
+  function onBack() {
+    if (sheetOpen()) { closeHelp(); return; }
+    back();
+  }
+
+  /* ================= Navigation ================= */
+  var nav = { tab: 'home', stack: [] };
+  var TITLES = { home: 'Aytilmagan xatlar', letters: 'Xatlarim', mood: 'Kayfiyat', care: "G'amxo'rlik",
+    write: 'Xat', detail: 'Xat', reply: 'Saqlandi', settings: 'Sozlamalar', princess: 'Princess' };
+  function current() { return nav.stack.length ? nav.stack[nav.stack.length - 1] : { screen: nav.tab, params: {} }; }
+  function go(screen, params) { leaveScreen(); nav.stack.push({ screen: screen, params: params || {} }); render(); }
+  function replaceTop(screen, params) {
+    leaveScreen();
+    if (nav.stack.length) nav.stack[nav.stack.length - 1] = { screen: screen, params: params || {} };
+    else nav.stack.push({ screen: screen, params: params || {} });
+    render();
+  }
+  function back() { if (!nav.stack.length) return; leaveScreen(); nav.stack.pop(); render(); }
+  function setTab(t) { leaveScreen(); nav.tab = t; nav.stack = []; render(); }
+
+  function render() {
+    var cur = current(), view = $('#view');
+    view.innerHTML = SCREENS[cur.screen](cur.params || {});
+    view.setAttribute('aria-busy', 'false');
+    view.classList.remove('view-enter'); void view.offsetWidth; view.classList.add('view-enter');
+    var tabs = nav.stack.length === 0;
+    $('#tabbar').hidden = !tabs;
+    view.classList.toggle('no-tabs', !tabs);
+    Array.prototype.forEach.call(document.querySelectorAll('.tabbar [data-tab]'), function (b) {
+      b.setAttribute('aria-selected', String(tabs && b.getAttribute('data-tab') === nav.tab));
+    });
+    var title = TITLES[cur.screen] || TITLES.home;
+    if (cur.screen === 'write') title = cur.params.id ? 'Tahrirlash' : 'Yangi xat';
+    if (cur.screen === 'princess') title = pName();
+    view.classList.remove('chat-mode');
+    $('#title').textContent = title;
+    if (cur.screen === 'write') setMainButton('Saqlash', saveLetter); else setMainButton(null);
+    updateBack();
+    if (AFTER[cur.screen]) AFTER[cur.screen](cur.params || {});
+    window.scrollTo(0, 0);
+  }
+
+  function emptyState(icon, title, text, extra) {
+    return '<div class="empty"><div class="big" aria-hidden="true">' + icon + '</div><h2>' + title + '</h2><p class="muted">' + text + '</p>' + (extra || '') + '</div>';
+  }
+
+  /* ================= Screen: Home ================= */
+  function ring(n, total) {
+    var r = 22, c = 2 * Math.PI * r, off = c * (1 - n / total);
+    return '<svg class="ring" viewBox="0 0 56 56" role="img" aria-label="Bugun ' + n + ' / ' + total + '">' +
+      '<circle cx="28" cy="28" r="' + r + '" class="ring-bg"/>' +
+      '<circle cx="28" cy="28" r="' + r + '" class="ring-fg" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '" transform="rotate(-90 28 28)"/>' +
+      '<text x="28" y="33" text-anchor="middle">' + n + '/' + total + '</text></svg>';
+  }
+  function reminderText() {
+    var h = new Date().getHours(), c = getCheck(dayKey()).items;
+    if (!c[0] && h >= 12) return 'Bugun biror narsa yeyishga ulgurdingmi? Kichkina tamaddi ham hisobga kiradi.';
+    if (!c[1]) return "Bir piyola iliq choy yoki bir stakan suv — o'zingga kichik g'amxo'rlik.";
+    if (!c[2] && h >= 8 && h < 20) return "Imkon bo'lsa, besh daqiqa tashqariga chiqib, toza havodan nafas ol.";
+    if (!c[3]) return "Bugun ishongan bir odamga \"menga qiyin\" deb yozib ko'rsang-chi? Bu kuchlilik belgisi.";
+    return "Bugun o'zingga yaxshi qarading. Bu juda muhim 🌿";
+  }
+  function lowMoodCard() {
+    return '<section class="card soft"><h3>🤍 Bir narsani aytib qo\'ymoqchiman</h3>' +
+      "<p>So'nggi kunlarda kayfiyating ancha og'ir bo'lib turibdi. Bu tushunarli — yo'qotish juda og'ir yuk. " +
+      "Ishongan bir odamingga yoki psixologga dardingni aytsang, yengilroq bo'lishi mumkin.</p>" +
+      '<button class="btn btn-soft" data-action="help">Kim bilan gaplashish mumkin?</button></section>';
+  }
+  function moodRow(action, selected, labelId) {
+    return '<div class="emoji-row" role="radiogroup" aria-labelledby="' + labelId + '">' + MOODS.map(function (m) {
+      var on = selected === m.v;
+      return '<button role="radio" aria-checked="' + on + '" aria-label="' + esc(m.l) + '" class="emoji-btn' + (on ? ' on' : '') +
+        '" data-action="' + action + '" data-v="' + m.v + '">' + m.e + '</button>';
+    }).join('') + '</div>';
+  }
+  function screenHome() {
+    var now = new Date(), h = now.getHours();
+    var greet = h >= 5 && h < 11 ? 'Xayrli tong' : h >= 11 && h < 17 ? 'Xayrli kun' : h >= 17 && h < 22 ? 'Xayrli kech' : 'Xayrli tun';
+    var today = getCheck(dayKey());
+    var hasDraft = S.draft && S.draft.text && S.draft.text.trim();
+    var m = moodOf(today.mood);
+    return '<section class="hero"><p class="muted small">' + WEEKDAYS[now.getDay()] + ', ' + fmtDate(now) + '</p>' +
+      '<h2>' + greet + ' 🤍</h2><p class="muted">Bu yer faqat sen uchun. Shoshilmasdan, o\'z sur\'atingda.</p></section>' +
+      '<button class="btn btn-primary btn-big" data-action="new-letter">✍️ Yangi xat yozish</button>' +
+      (hasDraft ? '<button class="card card-link" data-action="continue-draft">📝 Tugallanmagan xating bor — davom ettirasanmi?</button>' : '') +
+      '<section class="card"><h3 id="qm-label">Hozir o\'zingni qanday his qilyapsan?</h3>' + moodRow('quick-mood', today.mood, 'qm-label') +
+      '<p class="muted small" id="qm-msg" style="margin-top:8px">' +
+      (m ? 'Belgilandi: ' + esc(m.l) + ". Istalgan payt o'zgartirishing mumkin." : 'Bir teginish yetarli.') + '</p></section>' +
+      '<section class="stats">' +
+      '<button class="card stat" data-action="tab" data-tab="care" aria-label="Bugungi g\'amxo\'rlik ' + careCount(dayKey()) + ' dan 4">' + ring(careCount(dayKey()), 4) + '<span>g\'amxo\'rlik</span></button>' +
+      '<button class="card stat" data-action="tab" data-tab="letters"><b>' + S.letters.length + '</b><span>xat</span></button>' +
+      '<div class="card stat"><b>' + writingStreak() + '</b><span>kun ketma-ket yozding</span></div></section>' +
+      (lowMood() ? lowMoodCard() : '') +
+      (S.settings.reminders ? '<section class="card soft"><h3>🌿 Muloyim eslatma</h3><p style="margin:0">' + esc(reminderText()) + '</p></section>' : '');
+  }
+
+  /* ================= Screen: Write ================= */
+  var W = null, draftTimer = null, draftDirty = false;
+  function screenWrite(p) {
+    var editing = p.id ? S.letters.filter(function (l) { return l.id === p.id; })[0] : null;
+    var d = S.draft;
+    if (editing) {
+      var src = d && d.editingId === editing.id ? d : editing;
+      W = { id: editing.id, text: src.text || '', mood: src.mood || null, tags: (src.tags || []).slice(), lock: 0, saved: false };
+    } else if (d && !d.editingId) {
+      W = { id: null, text: d.text || '', mood: d.mood || null, tags: (d.tags || []).slice(), lock: d.lock || 0, saved: false };
+    } else {
+      W = { id: null, text: '', mood: null, tags: [], lock: 0, saved: false };
+    }
+    return '<label for="letter-text" class="label">' + (editing ? 'Xatingni tahrirla' : 'Aytilmay qolgan so\'zlaringni yoz') + '</label>' +
+      '<textarea id="letter-text" maxlength="' + MAX_LEN + '" placeholder="Masalan: Bugun seni yana esladim..." rows="7">' + esc(W.text) + '</textarea>' +
+      '<div class="row-between small muted" style="margin:6px 4px 0"><span id="draft-status" aria-live="polite"></span><span id="char-count"></span></div>' +
+      '<section class="card"><h3 id="wm-label">Kayfiyat</h3>' + moodRow('w-mood', W.mood, 'wm-label') + '</section>' +
+      '<section class="card"><h3>Teglar <span class="muted small">(ixtiyoriy)</span></h3><div class="chips">' +
+      TAGS.map(function (t) {
+        var on = W.tags.indexOf(t.id) >= 0;
+        return '<button class="chip' + (on ? ' on' : '') + '" aria-pressed="' + on + '" data-action="w-tag" data-tag="' + t.id + '">' + esc(t.l) + '</button>';
+      }).join('') + '</div></section>' +
+      (editing ? '' :
+        '<section class="card"><h3 id="lock-label">💌 Kelajakdagi menga</h3><p class="muted small">Xatni qulflab qo\'y — u tanlangan kungacha yopiq turadi, faqat sanasi ko\'rinadi.</p>' +
+        '<div class="seg" role="radiogroup" aria-labelledby="lock-label">' + [0, 7, 30, 90].map(function (n) {
+          var on = W.lock === n;
+          return '<button role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-action="w-lock" data-n="' + n + '">' + (n ? n + ' kun' : "Yo'q") + '</button>';
+        }).join('') + '</div></section>') +
+      (inTG ? '' : '<button class="btn btn-primary btn-big" data-action="save-letter">Saqlash</button>') +
+      '<p class="muted small center">Qoralama avtomatik saqlanadi. Xatlaring faqat senga ko\'rinadi.</p>';
+  }
+  function afterWrite() {
+    var ta = $('#letter-text');
+    autoGrow(ta); updateCount();
+    if (!W.text) setTimeout(function () { try { ta.focus(); } catch (e) {} }, 250);
+    clearInterval(draftTimer);
+    draftTimer = setInterval(function () { if (draftDirty) saveDraft(); }, 3000);
+    setClosingConfirm(!!W.text.trim());
+  }
+  function autoGrow(ta) { ta.style.height = 'auto'; ta.style.height = Math.max(220, ta.scrollHeight + 2) + 'px'; }
+  function updateCount() { var c = $('#char-count'); if (c) c.textContent = W.text.length + ' / ' + MAX_LEN; }
+  function setClosingConfirm(on) {
+    if (!ver('6.2')) return;
+    try { on ? tg.enableClosingConfirmation() : tg.disableClosingConfirmation(); } catch (e) {}
+  }
+  function saveDraft() {
+    if (!W || W.saved) return;
+    draftDirty = false;
+    if (!W.text.trim()) { if (S.draft && (S.draft.editingId || null) === (W.id || null)) { S.draft = null; persist('draft'); } return; }
+    S.draft = { text: W.text, mood: W.mood, tags: W.tags, lock: W.lock, editingId: W.id, ts: Date.now() };
+    persist('draft');
+    var st = $('#draft-status'); if (st) st.textContent = 'Qoralama saqlandi · ' + fmtTime(Date.now());
+  }
+  function leaveScreen() {
+    var cur = current();
+    if (cur.screen === 'write') {
+      clearInterval(draftTimer); draftTimer = null;
+      if (W && !W.saved) saveDraft();
+      setClosingConfirm(false);
+    }
+  }
+
+  var saving = false;
+  function saveLetter() {
+    if (saving || !W) return;
+    var text = W.text.trim();
+    if (!text) { toast("Avval bir necha so'z yoz 🤍"); haptic.notify('warning'); return; }
+    saving = true;
+    if (inTG) { try { tg.MainButton.showProgress(false); } catch (e) {} }
+    var now = Date.now(), target, wasEdit = !!W.id, newlyFlagged = false;
+    if (wasEdit) {
+      target = S.letters.filter(function (l) { return l.id === W.id; })[0];
+      if (target) {
+        newlyFlagged = !target.flagged && hasRisk(text);
+        target.text = text; target.mood = W.mood; target.tags = W.tags.slice(); target.updatedAt = now;
+        if (newlyFlagged) target.flagged = true;
+      }
+    } else {
+      var r = pickReply(text, W.mood, W.tags);
+      target = { id: uid(), text: text, mood: W.mood, tags: W.tags.slice(), createdAt: now, updatedAt: now,
+        unlockAt: W.lock ? now + W.lock * DAY : null, reply: r.text, flagged: r.flagged };
+      S.letters.unshift(target);
+      S.settings.lastReplyId = r.id;
+      persist('settings');
+    }
+    W.saved = true;
+    S.draft = null;
+    persist('draft');
+    persist('letters').then(function () {
+      saving = false;
+      if (inTG) { try { tg.MainButton.hideProgress(); } catch (e) {} }
+    });
+    haptic.notify('success');
+    if (wasEdit) {
+      back();
+      toast('Xat yangilandi');
+      if (newlyFlagged) openHelp();
+    } else {
+      replaceTop('reply', { id: target.id });
+    }
+    if (!inTG) saving = false;
+  }
+
+  /* ================= Screen: Reply ================= */
+  function helpInline() {
+    return '<section class="card soft"><h3>🤍 Sen yolg\'iz emassan</h3>' +
+      "<p>Hozir yaqin odamingga yozish yoki qo'ng'iroq qilish juda to'g'ri qadam bo'ladi.</p>" +
+      '<div class="stack"><button class="btn btn-primary" data-action="share-friend">💬 Kimgadir xabar yuborish</button>' +
+      '<a class="btn btn-danger" href="tel:103">📞 103 — Tez tibbiy yordam</a></div></section>';
+  }
+  function screenReply(p) {
+    var l = S.letters.filter(function (x) { return x.id === p.id; })[0];
+    if (!l) return emptyState('💌', 'Xat saqlandi', '');
+    return '<section class="card reply-card"><p class="eyebrow">🤍 Senga bir necha so\'z</p>' +
+      '<p class="reply-text">' + esc(l.reply) + '</p><p class="muted small" style="margin:0">— hamrohing</p></section>' +
+      (isLocked(l) ? '<section class="card"><p style="margin:0">🔒 Xating <b>' + fmtDate(l.unlockAt) + '</b> kuni ochiladi. O\'sha kuni uni qayta o\'qiysan.</p></section>' : '') +
+      (l.flagged ? helpInline() : '') +
+      '<div class="stack"><button class="btn btn-soft" data-action="tab" data-tab="letters">Xatlarimga o\'tish</button>' +
+      '<button class="btn btn-soft" data-action="tab" data-tab="home">Bosh sahifa</button></div>';
+  }
+
+  /* ================= Screen: Letters ================= */
+  var LF = { q: '', mood: '', tag: '' };
+  function filteredLetters() {
+    var q = normalize(LF.q.trim());
+    return S.letters.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).filter(function (l) {
+      var locked = isLocked(l);
+      if (locked) return !q && !LF.mood && !LF.tag; // locked letters reveal nothing to filters
+      if (LF.mood && String(l.mood) !== LF.mood) return false;
+      if (LF.tag && l.tags.indexOf(LF.tag) < 0) return false;
+      if (q && normalize(l.text).indexOf(q) < 0) return false;
+      return true;
+    });
+  }
+  function letterListHTML() {
+    var list = filteredLetters();
+    if (!list.length) return emptyState('🔍', 'Hech narsa topilmadi', "Boshqa so'z yoki filtr bilan urinib ko'r.");
+    var html = '', lastMonth = '';
+    list.forEach(function (l) {
+      var d = new Date(l.createdAt), mk = cap(MONTHS[d.getMonth()]) + ' ' + d.getFullYear();
+      if (mk !== lastMonth) { html += '<h3 class="month">' + mk + '</h3>'; lastMonth = mk; }
+      if (isLocked(l)) {
+        html += '<button class="card letter-item locked" data-action="locked" data-id="' + esc(l.id) + '">' +
+          '<div class="row-between"><span class="small muted">' + fmtDate(l.createdAt) + '</span><span aria-hidden="true">🔒</span></div>' +
+          '<p class="preview"><b>Kelajakdagi menga</b> · ' + fmtDate(l.unlockAt) + ' kuni ochiladi</p></button>';
+        return;
+      }
+      var m = moodOf(l.mood);
+      html += '<button class="card letter-item" data-action="open-letter" data-id="' + esc(l.id) + '">' +
+        '<div class="row-between"><span class="small muted">' + fmtDate(l.createdAt) + ' · ' + fmtTime(l.createdAt) +
+        (l.unlockAt ? ' · 💌' : '') + '</span>' + (m ? '<span aria-label="' + esc(m.l) + '">' + m.e + '</span>' : '') + '</div>' +
+        '<p class="preview">' + esc(l.text.slice(0, 200)) + '</p>' +
+        (l.tags.length ? '<div>' + l.tags.map(function (t) { return '<span class="tag">' + esc(tagLabel(t)) + '</span>'; }).join('') + '</div>' : '') +
+        '</button>';
+    });
+    return html;
+  }
+  function screenLetters() {
+    if (!S.letters.length) {
+      return emptyState('💌', "Hali xat yo'q", "Birinchi xatingni yozganingda u shu yerda paydo bo'ladi.",
+        '<button class="btn btn-primary" data-action="new-letter" style="margin-top:12px">Birinchi xatni yozish</button>');
+    }
+    return '<label for="q" class="sr-only">Xatlardan qidirish</label>' +
+      '<input id="q" type="search" placeholder="🔍 Xatlardan qidirish" value="' + esc(LF.q) + '" autocomplete="off">' +
+      '<div class="filters"><label>Kayfiyat<select id="f-mood"><option value="">Hammasi</option>' +
+      MOODS.map(function (m) { return '<option value="' + m.v + '"' + (LF.mood === String(m.v) ? ' selected' : '') + '>' + m.e + ' ' + esc(m.l) + '</option>'; }).join('') +
+      '</select></label><label>Teg<select id="f-tag"><option value="">Hammasi</option>' +
+      TAGS.map(function (t) { return '<option value="' + t.id + '"' + (LF.tag === t.id ? ' selected' : '') + '>' + esc(t.l) + '</option>'; }).join('') +
+      '</select></label></div><div id="letter-list">' + letterListHTML() + '</div>';
+  }
+  function refreshList() { var el = $('#letter-list'); if (el) el.innerHTML = letterListHTML(); }
+
+  /* ================= Screen: Detail ================= */
+  function screenDetail(p) {
+    var l = S.letters.filter(function (x) { return x.id === p.id; })[0];
+    if (!l) return emptyState('💌', 'Xat topilmadi', "Ehtimol u o'chirilgan.");
+    if (isLocked(l)) return emptyState('🔒', 'Bu xat hali yopiq', fmtDate(l.unlockAt) + ' kuni ochiladi. Sabr qil — u seni kutadi.');
+    var m = moodOf(l.mood);
+    return '<article class="card"><p class="small muted" style="margin:0">' + fmtDate(l.createdAt) + ' · ' + fmtTime(l.createdAt) +
+      (l.updatedAt - l.createdAt > 60000 ? ' · tahrirlangan' : '') + '</p>' +
+      (m ? '<p style="margin:8px 0 0">' + m.e + ' ' + esc(m.l) + '</p>' : '') +
+      (l.tags.length ? '<div>' + l.tags.map(function (t) { return '<span class="tag">' + esc(tagLabel(t)) + '</span>'; }).join('') + '</div>' : '') +
+      (l.unlockAt ? '<p class="small muted" style="margin:8px 0 0">💌 Kelajakdagi menga · ' + fmtDate(l.unlockAt) + ' kuni ochildi</p>' : '') +
+      '<div class="letter-text">' + esc(l.text) + '</div></article>' +
+      (l.reply ? '<section class="card reply-card"><p class="eyebrow">🤍 O\'shanda olgan javobing</p><p class="reply-text">' + esc(l.reply) + '</p></section>' : '') +
+      '<div class="row-2"><button class="btn btn-soft" data-action="edit-letter" data-id="' + esc(l.id) + '">✏️ Tahrirlash</button>' +
+      '<button class="btn btn-danger-soft" data-action="delete-letter" data-id="' + esc(l.id) + '">🗑 O\'chirish</button></div>';
+  }
+
+  /* ================= Screen: Mood ================= */
+  var moodRange = 30;
+  function chartSVG(days) {
+    var W_ = 320, H = 180, L = 30, R = 12, T = 14, B = 26, pw = W_ - L - R, ph = H - T - B, n = days.length;
+    function x(i) { return L + (n === 1 ? pw / 2 : i * pw / (n - 1)); }
+    function y(v) { return T + (5 - v) * ph / 4; }
+    var g = '';
+    for (var v = 1; v <= 5; v++) {
+      g += '<line class="grid" x1="' + L + '" x2="' + (W_ - R) + '" y1="' + y(v) + '" y2="' + y(v) + '"/>' +
+        '<text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end" style="font-size:12px">' + MOODS[v - 1].e + '</text>';
+    }
+    var pts = [];
+    days.forEach(function (d, i) { if (d.avg != null) pts.push([x(i), y(d.avg)]); });
+    var path = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+    var area = pts.length > 1 ? path + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + (T + ph) + ' L' + pts[0][0].toFixed(1) + ' ' + (T + ph) + ' Z' : '';
+    var r = n > 30 ? 2 : 3.5;
+    var labels = [0, Math.floor((n - 1) / 2), n - 1].map(function (i) {
+      var d = days[i].date;
+      return '<text x="' + x(i) + '" y="' + (H - 6) + '" text-anchor="middle">' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '</text>';
+    }).join('');
+    return '<svg class="chart" viewBox="0 0 ' + W_ + ' ' + H + '" role="img" aria-label="Oxirgi ' + n + ' kunlik kayfiyat grafigi">' +
+      '<defs><linearGradient id="mg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".28"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>' +
+      g + (area ? '<path d="' + area + '" fill="url(#mg)"/>' : '') + (pts.length > 1 ? '<path class="line" d="' + path + '"/>' : '') +
+      pts.map(function (p) { return '<circle class="pt" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + r + '"/>'; }).join('') +
+      labels + '</svg>';
+  }
+  function insight(days) {
+    var vals = days.filter(function (d) { return d.avg != null; });
+    if (vals.length < 2) return "Kayfiyatingni bir necha kun belgilab borsang, bu yerda kichik kuzatuvlar paydo bo'ladi.";
+    var all = avg(vals.map(function (d) { return d.avg; }));
+    var half = Math.floor(days.length / 2);
+    var a = avg(days.slice(0, half).filter(function (d) { return d.avg != null; }).map(function (d) { return d.avg; }));
+    var b = avg(days.slice(half).filter(function (d) { return d.avg != null; }).map(function (d) { return d.avg; }));
+    var label = { 7: 'Oxirgi bir necha kunda', 30: 'Oxirgi 2 haftada', 90: 'Oxirgi oy yarimda' }[days.length];
+    var base = "O'rtacha kayfiyat: " + moodOf(Math.round(all)).e + ' ' + all.toFixed(1) + ' / 5. ';
+    if (a == null || b == null) return base + "Har bir belgilagan kuning o'zingni tushunishga yordam beradi.";
+    var diff = b - a;
+    if (diff >= 0.4) return base + label + ' kayfiyating biroz yaxshilandi 🌱 Kichik, lekin haqiqiy o\'zgarish.';
+    if (diff <= -0.4) return base + label + " kunlar og'irroq kechdi. Bu tabiiy — o'zingga ko'proq mehr ko'rsat.";
+    return base + label + " kayfiyating barqaror bo'lib turibdi.";
+  }
+  function screenMood() {
+    var days = dailyMoods(moodRange), any = days.some(function (d) { return d.avg != null; });
+    var today = getCheck(dayKey());
+    return '<div class="seg" role="radiogroup" aria-label="Davr">' + [7, 30, 90].map(function (n) {
+      var on = moodRange === n;
+      return '<button role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-action="mood-range" data-n="' + n + '">' + n + ' kun</button>';
+    }).join('') + '</div>' +
+      (any ? '<section class="card">' + chartSVG(days) + '</section><section class="card"><h3>Kuzatuv</h3><p style="margin:0">' + esc(insight(days)) + '</p></section>'
+        : emptyState('📈', "Hali ma'lumot yo'q", "Kayfiyatni bosh sahifada yoki xat yozganda belgilasang, grafik shu yerda paydo bo'ladi.")) +
+      (lowMood() ? lowMoodCard() : '') + recentNotesHTML() +
+      '<section class="card"><h3 id="mm-label">Bugungi kayfiyat</h3>' + moodRow('quick-mood', today.mood, 'mm-label') + '</section>';
+  }
+
+  // Check-in answers (saved from the Princess tab) shown in the Mood screen
+  function recentNotesHTML() {
+    var all = [];
+    Object.keys(S.checks).forEach(function (k) { (S.checks[k].notes || []).forEach(function (n) { all.push(n); }); });
+    all.sort(function (a, b) { return b.ts - a.ts; });
+    all = all.slice(0, 5);
+    if (!all.length) return '';
+    var SL = { morning: 'Tong', afternoon: 'Kun', evening: 'Kech', night: 'Tun' };
+    return '<section class="card"><h3>So\'nggi qaydlar</h3>' + all.map(function (n) {
+      var m = moodOf(n.mood);
+      return '<div style="padding:8px 0;border-top:1px solid var(--border)"><p class="small muted" style="margin:0">' + fmtDate(n.ts) + ' · ' + SL[n.slot] + (m ? ' · ' + m.e : '') + '</p>' +
+        (n.note ? '<p style="margin:2px 0 0">' + esc(n.note) + '</p>' : '') + '</div>';
+    }).join('') + '</section>';
+  }
+
+  /* ================= Screen: Care ================= */
+  function careMsg(n) {
+    if (n === 0) return 'Bitta kichik qadamdan boshla. Shoshilish shart emas.';
+    if (n < 4) return "Yaxshi, " + n + "/4. Qolganini o'z vaqtida qilasan.";
+    return "Bugun o'zingga to'liq g'amxo'rlik qilding 🌿";
+  }
+  function weekHTML() {
+    var out = '', today = new Date();
+    for (var i = 6; i >= 0; i--) {
+      var d = addDays(today, -i), k = dayKey(d), n = careCount(k);
+      out += '<li class="day' + (i === 0 ? ' today' : '') + '" aria-label="' + WEEKDAYS[d.getDay()] + ': ' + n + ' / 4">' +
+        '<span class="dot"><i style="opacity:' + (n / 4) + '"></i></span><span>' + WD_SHORT[d.getDay()] + '</span></li>';
+    }
+    var s = careStreak();
+    return '<ul class="week">' + out + '</ul><p class="muted small" style="margin:0">' +
+      (s ? '🔥 ' + s + " kun ketma-ket o'zingga g'amxo'rlik qilding" : "Bugun birinchi belgini qo'yib ko'r") + '</p>';
+  }
+  function screenCare() {
+    var items = getCheck(dayKey()).items, n = careCount(dayKey());
+    return '<section class="card"><h3>Bugungi g\'amxo\'rlik</h3><p class="muted small">Kichik qadamlar ham hisobga kiradi.</p>' +
+      '<ul class="checklist">' + CARE_ITEMS.map(function (t, i) {
+        return '<li><button class="check' + (items[i] ? ' on' : '') + '" role="checkbox" aria-checked="' + !!items[i] + '" data-action="care" data-i="' + i + '">' +
+          '<span class="box" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>' + esc(t) + '</span></button></li>';
+      }).join('') + '</ul><p id="care-msg" class="muted small" aria-live="polite" style="margin:10px 0 0">' + careMsg(n) + '</p></section>' +
+      '<section class="card"><h3>Shu hafta</h3><div id="week">' + weekHTML() + '</div></section>' +
+      (S.settings.reminders ? '<section class="card soft"><h3>🌿 Muloyim eslatma</h3><p id="care-rem" style="margin:0">' + esc(reminderText()) + '</p></section>' : '');
+  }
+
+  /* ================= Screen: Settings ================= */
+  function screenSettings() {
+    var s = S.settings, hasPin = !!s.pinHash;
+    return '<section class="card"><h3 id="th-label">Ko\'rinish</h3><div class="seg" role="radiogroup" aria-labelledby="th-label">' +
+      [['auto', 'Avtomatik'], ['light', "Yorug'"], ['dark', "Qorong'i"]].map(function (o) {
+        var on = s.theme === o[0];
+        return '<button role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-action="theme" data-v="' + o[0] + '">' + o[1] + '</button>';
+      }).join('') + '</div></section>' +
+      '<section class="card"><h3>🔒 PIN-kod</h3><p class="muted small">' +
+      (hasPin ? "Ilova ochilganda 4 xonali PIN so'raladi." : "Ilovani ochishda 4 xonali PIN so'ralishini yoqish mumkin.") +
+      ' PIN telefoningdagi ekranni himoya qiladi, ma\'lumotni shifrlamaydi.</p>' +
+      (hasPin ? '<div class="row-2"><button class="btn btn-soft" data-action="pin-change">O\'zgartirish</button><button class="btn btn-danger-soft" data-action="pin-remove">O\'chirish</button></div>'
+        : '<button class="btn btn-soft" data-action="pin-set">PIN o\'rnatish</button>') + '</section>' +
+      '<section class="card"><label class="switch-row" for="rem"><span>Muloyim eslatmalar<br><span class="muted small">Faqat ilova ichida, bildirishnomalarsiz</span></span>' +
+      '<input type="checkbox" id="rem"' + (s.reminders ? ' checked' : '') + '></label></section>' +
+      '<section class="card"><h3>👑 ' + esc(pName()) + '</h3><label class="label small" for="p-name">Ismi</label>' +
+      '<input id="p-name" class="field" maxlength="20" value="' + esc(pName()) + '">' +
+      '<label class="switch-row" for="p-ci" style="margin-top:8px"><span>Vaqtga bog\'liq savollar<br><span class="muted small">Tab ochilganda chiqadi, bildirishnomalarsiz</span></span>' +
+      '<input type="checkbox" id="p-ci"' + (s.pCheckins !== false ? ' checked' : '') + '></label>' +
+      '<button class="btn btn-danger-soft" data-action="p-clear" style="margin-top:8px">Suhbatni tozalash</button></section>' +
+      '<section class="card"><h3>Ma\'lumotlar</h3><p class="muted small">Saqlash joyi: ' +
+      (Store.isCloud() ? "Telegram bulutli xotirasi (faqat sening akkaunting uchun)" : "shu qurilma xotirasi") + '</p>' +
+      '<div class="row-2"><button class="btn btn-soft" data-action="export-copy">📋 Nusxa olish</button><button class="btn btn-soft" data-action="export-download">⬇️ Yuklab olish</button></div>' +
+      '<details style="margin-top:12px"><summary style="min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600">Import qilish (JSON)</summary>' +
+      '<label for="import-text" class="small muted">Eksport qilingan JSON matnini shu yerga joylashtir yoki fayl tanla. Xatlar mavjudlariga qo\'shiladi.</label>' +
+      '<textarea id="import-text" rows="4" style="margin:8px 0"></textarea>' +
+      '<label class="small muted" for="import-file">Fayl</label><input type="file" id="import-file" accept="application/json,.json" style="margin:6px 0 10px;max-width:100%">' +
+      '<button class="btn btn-primary" data-action="import">Import qilish</button></details></section>' +
+      '<section class="card"><h3>Barcha ma\'lumotlarni o\'chirish</h3><p class="muted small">Xatlar, kayfiyat va g\'amxo\'rlik yozuvlari butunlay o\'chadi. Avval eksport qilib olishni maslahat beramiz.</p>' +
+      '<button class="btn btn-danger" data-action="wipe">Hammasini o\'chirish</button></section>' +
+      '<p class="muted small center">Aytilmagan xatlar · Analitika yo\'q, tashqi serverlar yo\'q. Javoblar qurilmangning o\'zida tanlanadi.</p>';
+  }
+
+  /* ================= Princess companion (rule-based, local only) =================
+     A cheerful bookworm FRIEND. Never romantic, never possessive, never guilt-trips,
+     never speaks as or about the person the user lost. */
+  var CHAT_MAX = 200;
+  function P_DEFAULT() {
+    return { books: [], rituals: {}, last: {}, dayLine: null, awaitPage: null, askDate: null, lowNudgeDate: null, welcomed: false };
+  }
+  function pName() { return S.settings.princessName || 'Princess'; }
+  function fill(t) { return t.replace(/\{n\}/g, pName()); }
+
+  var PP = {
+    welcome: [
+      "Salom! Men {n} 👑 — kitobsevar do'sting va kichik yordamchingman.",
+      "Bir narsani ochiq aytay: men haqiqiy odam emasman, telefoningning o'zida oddiy qoidalar bilan javob beraman. Shifokor yoki psixolog o'rnini ham bosa olmayman. Lekin ovqat, uyqu, darslar va kitoblar haqida bajonidil gaplashaman 🌷"
+    ],
+    morning: ["Xayrli tong! ☀️ Bugun qanday boshlandi?", "Tong muborak! Men hozirgina choy damladim 🍵 Senda nima gaplar?", "Xayrli tong! Derazani ochdim, havo juda toza 🌬️ Kayfiyat qanday?"],
+    day: ["Salom! 🌼 Kuning qanday ketyapti?", "Salom-salom! Bir oz tanaffus qilamizmi? 📖", "Kunning o'rtasi! Men kitobimning yangi bobini boshladim. Senda nima yangilik? 😊"],
+    evening: ["Xayrli kech! 🌆 Bugun nima bo'ldi, aytib berasanmi?", "Kech kirdi, shamchiroq yoqdim 🕯️ Kuning qanday o'tdi?", "Xayrli kech! Choy va kitob vaqti ☕ Sen qandaysan?"],
+    night: ["Hali uxlamadingmi? 🌙 Men ham kitob o'qib o'tiribman. Yaxshimisan?", "Tun tinch ekan ✨ Bugun o'zingni qanday his qilyapsan?", "Kech bo'ldi 🌌 Biroz gaplashib, keyin dam olamizmi?"],
+    hello: ["Salom! 🌷 Qalaysan?", "Assalomu alaykum! Bugun kayfiyat qanday? 😊", "Salom-salom! 👋 Nima gaplar?", "Va alaykum assalom! Choy damlaymi? 🍵", "Salom! Bugun qanday kitob o'qiyapsan? 📚"],
+    thanks: ["Arzimaydi! 🌸", "Yordam bera olganimdan xursandman 😊", "Senga ham rahmat, suhbatlashganing uchun 🤍", "Oh, uyalib ketdim 🙈 Arzimaydi!", "Senga yordam berish — mening kichik quvonchim ✨"],
+    m1: [
+      "Bugun juda og'ir ekan 🫂 Shoshilmasdan gapirib ber, men tinglayapman.",
+      "Og'ir kunlar bo'ladi. Hozir bitta narsa: chuqur nafas olib, bir stakan suv ichsak-chi? 💧",
+      "Bu og'irlikni bir o'zing ko'tarishing shart emas. Bugun yaqin bir odamga \"menga qiyin\" deb yozib ko'r 🤍",
+      "Bugun hech narsani mukammal qilish shart emas. Faqat o'zingga yumshoq bo'l 🌧️",
+      "Yuragingdagi og'irlikni sezyapman. Istasang, nima bo'lganini qisqacha yoz.",
+      "Juda qiyin bo'lsa, bugungi vazifalarni kichraytiramiz: ovqat, suv, dam. Shuning o'zi yetarli 🍵",
+      "Men ham ba'zan biroz g'amgin bo'laman, shunda yumshoq adyolga o'ranib, sekin musiqa qo'yaman. Senga nima yengillik beradi? 🎧",
+      "Agar og'irlik ko'p kun davom etsa, ishongan odamingga yoki psixologga aytish juda to'g'ri qadam 🤍"
+    ],
+    m2: [
+      "Biroz og'irroq kun ekan. Kel, birga kichik bir yaxshi narsa qidiramiz 🌱",
+      "Charchoq va g'amginlik ba'zan qo'l ushlashib keladi. Bugun erta yotsang-chi? 🌙",
+      "Kuch yo'qmi? Unda faqat bitta kichik ish: deraza ochib, toza havo ol 🌬️",
+      "Hislaringni yashirma, ular ham sening bir qisming. Men tinglayapman 👂",
+      "Bugungi kunning eng yaxshi daqiqasi qaysi bo'ldi? Hatto juda kichik bo'lsa ham 🍃",
+      "Iliq choy, yumshoq yorug'lik va bir-ikki sahifa kitob — og'ir kunlar uchun mening retseptim ☕📖",
+      "Sen yaxshi harakat qilyapsan, garchi o'zing buni sezmasang ham 🌼",
+      "Kimdir bilan qisqa gaplashish ham yordam beradi. Do'stingga \"salom, qalaysan?\" deb yozib ko'r 📱"
+    ],
+    m3: [
+      "O'rtacha kun ham yaxshi kun 🙂 Bugun nima qilding?",
+      "Tinch kunlar ham kerak. Ular yurakka dam beradi 🌤️",
+      "Bugun o'zing uchun bitta yoqimli narsa qildingmi? Hali kech emas ✨",
+      "Aralash kayfiyatmi? Unda kichik sayr yoki sevimli qo'shiq yordam berishi mumkin 🎶",
+      "Men bugun kitobimning yarmiga yetdim 📖 Sening kuning qaysi qismida?",
+      "O'rtacha kayfiyatda ham kichik g'alabalar bor. Bittasini ayt-chi? 🏅",
+      "Suv ichdingmi? O'rtacha kunlarda ham tanaga g'amxo'rlik kerak 💧",
+      "Bugungi kunni bir so'z bilan ta'riflasang, qaysi so'z bo'lardi? 🤔"
+    ],
+    m4: [
+      "Yaxshi eshitishga xursandman! 🌸 Nima yordam berdi?",
+      "Voy, yengilroq kun! Shu hisni eslab qol ✨",
+      "Bugungi kuchingni ko'rib quvondim 😊 Ertangi kunga bitta kichik maqsad qo'yamizmi?",
+      "Ana shunday! Kichik yaxshi kunlar ham katta ahamiyatga ega 🌼",
+      "Yaxshi kayfiyatda kitob o'qish ikki baravar yoqimli 📚 Hozir nima o'qiyapsan?",
+      "Bugun kimgadir yaxshi so'z aytsang-chi? Yaxshi kayfiyat yuqumli bo'ladi 💌",
+      "Zo'r! Men ham bugun gullarimga suv quydim, ular quvongandek bo'ldi 🌷",
+      "Shu yengillikni o'zingga sovg'a qil: bir oz sayr yoki sevimli taom 🍰"
+    ],
+    m5: [
+      "Yashasin! 🎉 Bugun ajoyib kun ekan!",
+      "Quvonchingni ko'rib men ham xursand bo'ldim ☀️ Nima bo'ldi, aytib ber!",
+      "Bunday kunlarni eslab qolish kerak. Ritual bo'limiga yozib qo'yasanmi? 📝",
+      "Ajoyib! Bu kuchni yaqinlaringga ham ulash 💛",
+      "Bugun sen porlab turibsan ✨ Shu kayfiyatda yangi kitob boshlasak-chi?",
+      "Juda yaxshi! Lekin baribir suv ichishni unutma 😄💧",
+      "Shunday kunlar ko'p bo'lsin! Bugungi eng yaxshi lahza qaysi bo'ldi? 🌈",
+      "Bugungi quvonchni to'liq his qil, u senga tegishli 🌻"
+    ],
+    dars: [
+      "Darslar qanday ketyapti? 📚 Eng qiyini qaysi fan bo'ldi?",
+      "Katta vazifani kichik bo'laklarga bo'lib ko'r: 25 daqiqa ish, 5 daqiqa dam ⏱️",
+      "O'qishdan charchadingmi? Biroz cho'zilib, suv ichib olsang, miyang yangilanadi 🧠💧",
+      "Imtihon yaqinmi? Bugun faqat bitta mavzuni takrorlash ham yetarli 📝",
+      "Bilim sekin yig'iladigan xazina. Bugun yana bitta tanga qo'shding 🪙",
+      "Tushunmagan joying bo'lsa, ustoz yoki sinfdoshingdan so'rash — aqllilik belgisi 🙋",
+      "Dars tayyorlayotganda men sekin musiqa qo'yaman, sen-chi? 🎧",
+      "Bugun o'rgangan bitta yangi narsangni ayt-chi? Men qiziqaman 🤓"
+    ],
+    ovqat: [
+      "Bugun ovqatlandingmi? 🍲 Hatto oddiy non va choy ham hisobga kiradi.",
+      "Mazali narsa yedingmi? Men bugun olma pirog haqida o'ylab o'tiribman 🥧",
+      "Ovqat — tanaga yoqilg'i. Kichkina tamaddi ham kayfiyatni ko'taradi 🍎",
+      "Sevimli taoming qaysi? Menimcha, palovga hech narsa yetmaydi 😋",
+      "Issiq sho'rva og'ir kunlarda ichni isitadi 🍜",
+      "Ovqatni shoshilmasdan, ta'mini his qilib ye. Bu ham kichik dam 🍽️",
+      "Bugun meva yedingmi? Bitta banan ham zo'r tanlov 🍌",
+      "Kimdir bilan birga ovqatlanish ikki baravar yoqimli. Oilang bilan dasturxonga o'tirsang-chi? 🫖"
+    ],
+    uyqu: [
+      "Uyqu — eng yaxshi dori 😴 Bugun erta yotishga harakat qilasanmi?",
+      "Yotishdan oldin telefonni bir chetga qo'yib, bir-ikki sahifa kitob o'qib ko'r 📖🌙",
+      "Men ham hozir biroz uyquchiman... 🥱 Ikkalamizga ham dam kerak!",
+      "Xonani biroz salqin va qorong'i qilsang, uyqu tezroq keladi 🌌",
+      "Kechqurun kofeinsiz iliq choy ichish uyquni yengillatadi 🍵",
+      "Kunduzi biroz mizg'ib olsang ham bo'ladi, faqat 20 daqiqadan oshirmagin 😌",
+      "Uyqu oldidan bugungi bitta yaxshi narsani eslasang, tush ham yaxshi bo'ladi ✨",
+      "Hamma narsa ertagacha kutib tura oladi. Hozir dam olish navbati 🛌"
+    ],
+    yolgiz: [
+      "Yolg'izlik og'ir his 🫂 Bugun bir do'stingga qisqa xabar yozsang-chi?",
+      "Men shu yerdaman, lekin men faqat kichik yordamchiman. Atrofingdagi odamlar bilan bog'lanish juda muhim 🤍",
+      "Oila a'zolaringdan biri bilan choy ichib gaplashsang-chi? 🫖",
+      "Ba'zan yolg'iz qolish dam beradi, ba'zan esa og'irlik qiladi. Hozir qaysi biri? 🌙",
+      "Kutubxona, sport zali yoki to'garak — yangi odamlar bilan tanishishning yumshoq yo'li 📚",
+      "Uzoqdagi do'stingga ovozli xabar yuborish ham yaqinlik beradi 🎙️",
+      "Seni tushunadigan odamlar bor. Bir kishiga \"menga qiyin\" deyish — jasorat 💪",
+      "Bugun kim bilan gaplashding? Hatto do'kondagi qisqa suhbat ham hisobga kiradi 🙂"
+    ],
+    charchoq: [
+      "Charchadingmi? 😮‍💨 Unda 10 daqiqa hech narsa qilmasdan dam ol — ruxsat beraman 😄",
+      "Charchoq — tananing \"biroz to'xta\" degani. Uni tingla 🌿",
+      "Suv ichdingmi? Ba'zan charchoq aslida chanqoq bo'ladi 💧",
+      "Bir oz cho'zil: qo'llarni yuqoriga, yelkalarni bo'shat... Yaxshimi? 🙆",
+      "Bugun ko'p ish qilding. Qolganini ertaga qoldirsang ham bo'ladi 🗓️",
+      "Men charchaganimda deraza oldida o'tirib, bulutlarni sanayman ☁️ Sinab ko'r!",
+      "Erta yotish — ertangi kuchning siri 🌙",
+      "Charchaganda o'zingga \"yaxshi harakat qildim\" deb ayt. Chunki shunday 🌟"
+    ],
+    kitob: [
+      "Kitob! 📚 Mening sevimli mavzum! Hozir nima o'qiyapsan?",
+      "Kitoblar bo'limiga o'qiyotgan kitobingni qo'shib qo'y, sahifalaringni kuzatib boraman 📖",
+      "Kuniga 10 sahifa — bir oyda 300 sahifa! Kichik qadamlar katta natija beradi ✨",
+      "Kitob o'qiyotganda choy ichish — mening sevimli odatim ☕",
+      "Qahramonlardan qaysi biri senga yoqdi? Men yaxshi do'stlik haqidagi hikoyalarni yaxshi ko'raman 🤝",
+      "Ba'zan bitta kitob butun bir dunyoni ochadi 🌍",
+      "O'qib bo'lgan kitobing haqida bir jumla fikr yozib qo'ysang, keyin eslash oson bo'ladi 📝",
+      "Diqqat qilish qiyin bo'lsa, qisqa hikoyalardan boshla. Bu ham o'qish! 📗"
+    ],
+    readThought: [
+      "O'qib bo'lgach, nima yoqqanini aytib ber 😊",
+      "Kitoblar bo'limiga qo'shib qo'ysang, sahifalaringni kuzataman 📖",
+      "Shoshilmasdan, kuniga bir-ikki bobdan o'qi ☕",
+      "Bunday kitoblar og'ir kunlarda yumshoq adyoldek bo'ladi 🧸",
+      "Boshlash qiyin bo'lsa, faqat 5 sahifa o'qib ko'r 🌱",
+      "Men buni o'qiganimda kechgacha o'ylab yurganman 🌙"
+    ],
+    nudgeFood: [
+      "Ovqat yemaganingni eshitib, biroz xavotir oldim. Hozir bitta kichik qadam: bir bo'lak non yoki bitta meva ye 🍎",
+      "Ishtaha bo'lmasa ham, iliq choy va bir hovuch yong'oq yetarli bo'ladi 🥜🍵",
+      "Tana yoqilg'isiz qiynaladi. Bitta qatiq yoki banan bilan boshlasak-chi? 🍌",
+      "Hozir katta ovqat shart emas. Bir piyola sho'rva yoki sut — kichik g'amxo'rlik 🥣",
+      "Kimdir bilan birga ovqatlansang, ishtaha osonroq ochiladi. Oilang bilan dasturxonga o'tirsang-chi? 🫖"
+    ],
+    nudgeSleep: [
+      "Uxlay olmadingmi? 😟 Bugun bitta kichik qadam: yotishdan 30 daqiqa oldin telefonni qo'y 📵",
+      "Uyqusizlik og'ir. Kunduzi 20 daqiqa ko'z yumib dam olish ham yordam beradi 😌",
+      "Kechqurun kofe va qora choyni kamaytirib ko'r, iliq sut yoki o'simlik choyi yaxshiroq 🍵",
+      "Yotganingda sekin nafas ol: 4 soniya nafas olish, 6 soniya chiqarish. Bir necha marta 🌙",
+      "Uyqu ko'p kun qochib yursa, shifokorga aytish to'g'ri qadam 🩺"
+    ],
+    boundary: [
+      "Bu so'zlaring uchun rahmat 🌷 Lekin men do'st va kichik yordamchiman, xolos. Haqiqiy iliqlikni atrofingdagi yaqin odamlar bera oladi — do'stlaring, oilang 🤍",
+      "Men sevgili emas, kitobsevar do'stingman 📚😊 Yuragingdagi mehrni yaqinlaringga ham ko'rsat — ular bunga loyiq.",
+      "Men odamning o'rnini bosa olmayman. Bugun bitta haqiqiy do'stingga yozib ko'rasanmi? 📱",
+      "Yuraging iliq ekan 🌼 Shu iliqlikni oilang yoki do'stlaring bilan bo'lishsang, ikki tomonga ham yaxshi bo'ladi.",
+      "Men yordamchi do'stman, sevgili emas — shu chegarani saqlaylik 🤍 Senga atrofingdagi odamlarning qo'llab-quvvatlashi kerak, men esa yonida ozgina yordam beraman.",
+      "Faqat menga suyanib qolma 🙏 Ishongan bir odaming bilan bugun gaplashib ko'r — bu juda muhim qadam."
+    ],
+    roleplay: [
+      "Men boshqa birovning nomidan gapira olmayman 🤍 Aytmoqchi bo'lgan so'zlaringni «Xatlar» bo'limida yozib qo'yishing mumkin.",
+      "Kechir, men faqat o'zim bo'lib gapiraman. Yuragingdagini xat qilib yozsang, biroz yengillashishi mumkin 💌",
+      "Bu sen uchun muhimligini tushunaman, lekin men birovning o'rnini egallay olmayman. Istasang, his-tuyg'ularing haqida gaplashamiz.",
+      "Men {n} bo'lib qolaman 👑 Aytilmay qolgan gaplar uchun «Yangi xat yozish» bor."
+    ],
+    safety: [
+      "Yozganlaring meni juda xavotirga soldi 🤍 Sen muhimsan. Iltimos, hoziroq yaqin bir odamingga qo'ng'iroq qil yoki yoz. Xavf bo'lsa — darhol 103 ga qo'ng'iroq qil.",
+      "Bu og'riqni bir o'zing ko'tarishing shart emas. Hozir ishongan bir odamga \"menga juda qiyin\" deb yoz. O'zingni xavfsiz his qilmasang — 103.",
+      "Hozir senga yaqin odamning ovozi kerak. Iltimos, kimgadir hoziroq qo'ng'iroq qil. Zarur bo'lsa — 103 📞"
+    ],
+    lowNudge: [
+      "Oxirgi kunlarda kayfiyating ancha og'ir bo'lib turibdi 🤍 Ishongan odamingga yoki psixologga aytsang, yengilroq bo'lishi mumkin.",
+      "Bir necha kundan beri og'ir ekan. Bu haqda yaqin bir odaming yoki psixolog bilan gaplashish — kuchlilik belgisi 🌱",
+      "Og'ir kunlar uzayib ketdi. Bugun ishongan bir kishiga \"menga qiyin\" deb aytib ko'rasanmi? Psixolog bilan suhbat ham yaxshi yo'l 🤍"
+    ],
+    general: [
+      "Tushundim 🙂 Yana nima haqida gaplashamiz?",
+      "Qiziq! Batafsilroq aytib berasanmi? 🌼",
+      "Hmm, shuni o'ylab qoldim 🤔 Sen bunga qanday qaraysan?",
+      "Gaplashganimizdan xursandman ✨ Bugun o'zingga qanday g'amxo'rlik qilding?",
+      "Eshityapman 👂 Davom et.",
+      "Shunaqa kunlar ham bo'ladi. Bugun suv ichdingmi? 💧",
+      "Yaxshi fikr! Buni kitobimning chetiga yozib qo'yaman 📝",
+      "Istasang, senga kitob tavsiya qilaman 📚",
+      "Bir lahza to'xtab, chuqur nafas olamizmi? Nafas oldik... chiqardik 🌬️",
+      "Ba'zan so'z topilmaydi, bu ham normal. Emoji bilan ham aytsang bo'ladi 😊"
+    ],
+    page: [
+      "{p}-sahifa! Zo'r ketyapsan 📖✨",
+      "Voy, {p}-sahifagacha yetibsan! Davom et 👀",
+      "«{t}» — yaxshi tanlov. {p}-sahifa ham kichik g'alaba 🏅",
+      "Har bir sahifa — kichik sayohat 🌍 {p}-sahifa, ajoyib!",
+      "Kuniga ozgina — va kitob tugaydi. {p}-sahifa, barakalla! 🌟",
+      "{p}-sahifa! Men bugun atigi 12 sahifa o'qidim, sen mendan o'zib ketding 😄",
+      "Shoshilmasdan o'qi, {p}-sahifa ham juda yaxshi natija ☕",
+      "Ana shunday! «{t}» seni kutib turibdi, {p}-sahifadan davom etasan 📚"
+    ],
+    finished: [
+      "Kitobni tugatding! 🎉 Bu katta yutuq. Undan nima esingda qoldi?",
+      "Yana bitta kitob o'qildi! 📚✨ Keyingisini birga tanlaymizmi?",
+      "Barakalla! Oxirgi sahifani yopish — alohida baxt 📕🌟"
+    ],
+    bookAdded: [
+      "«{t}» kitob burchagiga qo'shildi! 📚 Qachon o'qisang, sahifangni yozib qo'y.",
+      "Voy, «{t}»! Yaxshi tanlov 😊 Birga kuzatib boramiz.",
+      "«{t}» javonga joylashdi 📖 Kuniga ozgina o'qish ham yetarli."
+    ],
+    ci_morning: ["Yaxshi boshlanish! ☀️ Nonushta — kunning muhim odati.", "Javob berganing uchun rahmat 🌼 Bugun bitta kichik yaxshi ish qilamiz, kelishdikmi?", "Tong — yangi sahifa 📖 Uni o'zing xohlagandek yoz."],
+    ci_afternoon: ["Tushlikdan keyin bir stakan suv — ikki baravar foyda 💧", "Kunning yarmi o'tdi, yaxshi ketyapsan 🌤️", "Rahmat! Kichik tanaffus qilishni ham unutma ☕"],
+    ci_evening: ["Kuning haqida aytganing uchun rahmat 🌆 Endi biroz dam olish navbati.", "Darslar va ishlar tugagan bo'lsa, o'zingga sevimli mashg'ulot sovg'a qil 🎨", "Bugun ham o'tdi, sen esa harakat qilding — bu muhim 🌟"],
+    ci_night: ["Minnatdorlik — eng yaxshi tungi choy 🍵✨ Yaxshi dam ol!", "Buni ritualingga yozib qo'ydim 📝 Tushlaring tinch bo'lsin 🌙", "Yaxshi fikr bilan yotish — yaxshi uyqu 😴🌙"],
+    ciLow: ["Bugun og'ir bo'lsa, yaqin odamingga bir og'iz aytib qo'y 🤍", "Og'ir kunlarda o'zingga odatdagidan ham yumshoqroq bo'l 🌧️", "Kayfiyat past bo'lsa, faqat eng zarur ishlarni qil. Qolgani kutadi 🍵"],
+    ritual: ["Zo'r! Minnatdorlik va kichik maqsad — kunning chiroyli yakuni 🌙", "Yozib qo'ydim 📝 Ertaga ilovani ochganingda maqsadingni ko'rsataman 😊", "Kichik maqsadlar katta yo'llarni ochadi ✨", "Bugungi minnatdorligingni o'qib, men ham iliq his qildim 🌼", "Ertangi kunga tayyorsan! Endi esa dam 🛌"]
+  };
+
+  // Book suggestions: titles + authors + own short description (no quotes from the books)
+  var BOOK_RECS = [
+    { t: 'Kichkina shahzoda', a: 'Antuan de Sent-Ekzyuperi', d: "Do'stlik va mehr haqida qisqa, iliq ertak. Bir kechada o'qiladi.", g: true },
+    { t: 'Momo', a: 'Mixael Ende', d: "Vaqt va tinglashning qadri haqida sehrli ertak.", g: true },
+    { t: 'Shum bola', a: "G'afur G'ulom", d: "Kuldiradigan, sho'x sarguzashtlar. Kayfiyat ko'tarish uchun zo'r.", g: true },
+    { t: 'Sariq devni minib', a: "Xudoyberdi To'xtaboyev", d: "Hashamjonning kulgili sarguzashtlari, bolalikka qaytaradi.", g: true },
+    { t: 'Bolalik', a: 'Oybek', d: "Iliq xotiralar va eski mahalla hayoti haqida.", g: true },
+    { t: 'Chol va dengiz', a: 'Ernest Xeminguey', d: "Sabr va ichki kuch haqida qisqa qissa.", g: true },
+    { t: 'Tom Soyerning sarguzashtlari', a: 'Mark Tven', d: "Sho'x bolalik sarguzashtlari, yengil o'qiladi.", g: true },
+    { t: 'Alkimyogar', a: 'Paulo Koelo', d: "Orzusi ortidan yo'lga chiqqan yigit haqida, umid beradigan kitob.", g: true },
+    { t: 'Robinzon Kruzo', a: 'Daniel Defo', d: "Orolda yashashni o'rgangan inson haqida — chidamlilik darsi.", g: false },
+    { t: "O'tkan kunlar", a: 'Abdulla Qodiriy', d: "O'zbek adabiyotining durdonasi. Shoshilmasdan, sekin o'qiladi.", g: false },
+    { t: 'Mehrobdan chayon', a: 'Abdulla Qodiriy', d: "Hajviy va jiddiy sahnalar aralashgan klassik roman.", g: false },
+    { t: 'Kecha va kunduz', a: "Cho'lpon", d: "Go'zal tilda yozilgan klassik roman.", g: false },
+    { t: 'Atom odatlar', a: 'Jeyms Klir', d: "Kichik odatlar orqali katta o'zgarishlar haqida amaliy kitob.", g: true },
+    { t: 'Garri Potter va sehrli tosh', a: 'Joan Rouling', d: "Do'stlik va jasorat haqidagi sehrli dunyoga sayohat.", g: true }
+  ];
+
+  // "Princess's day": short fictional, cute daily activities
+  var DAY_LINES = [
+    "Bugun bir bob kitob o'qidim va choyim sovib qoldi 📖☕",
+    "Ertalab gullarimga suv quydim, eng kichigi yangi barg chiqaribdi 🌱",
+    "Bugun biroz uyquchan edim, kitobni yostiqqa qo'yib mizg'ib qolibman 😴",
+    "Kutubxonaga bordim va eski kitoblar hidini rosa hidladim 📚",
+    "Bugun yomg'ir yog'di, biroz g'amgin bo'ldim, lekin kakao yordam berdi ☔🍫",
+    "Yangi xatcho'p yasadim — gulli va pushti 🌸",
+    "Derazadan bulutlarni sanadim: 17 ta, bittasi quyonga o'xshardi ☁️🐰",
+    "Bugun she'r yozishga urindim, lekin faqat qofiyalar topdim 😄",
+    "Choynakka yalpizli choy damladim 🍵",
+    "Kitob javonimni rang bo'yicha tartibladim, endi kamalakka o'xshaydi 🌈",
+    "Bugun ertak o'qib, oxirida biroz yig'lab oldim. Yaxshi yig'i edi 🥲",
+    "Mushukcha derazam oldiga keldi, unga salom berdim 🐱",
+    "Bugun non pishirishga urindim, biroz kuyib ketdi, lekin mazali chiqdi 🍞",
+    "Eski kundaligimni varaqladim va kulib yubordim 📔",
+    "Ko'chada sariq barg topib, kitobim orasiga qo'ydim 🍂",
+    "Ertalab sekin mashq qildim: cho'zilish va chuqur nafas 🧘",
+    "Bugun «Kichkina shahzoda»ni yana o'qidim, har gal yangi narsa topaman 🌟",
+    "Choyga asal qo'shdim va bir soat hech narsa qilmadim. Juda yoqdi 🍯",
+    "Bugun biroz zerikdim, keyin eski jumboqni yechib o'tirdim 🧩",
+    "Kitob do'koniga faqat qarab chiqish uchun kirdim... uchta kitob bilan chiqdim 😅📚",
+    "Kechasi yulduzlarni kuzatdim, bittasi juda yorqin edi ✨",
+    "Gullarimga qo'shiq aytib berdim, ular indamadi, lekin xursanddek ko'rindi 🌷",
+    "Bugun shamol kuchli edi, sochlarim tojimga o'ralib qoldi 👑💨",
+    "Yangi daftar ochdim — birinchi sahifa har doim hayajonli 📓",
+    "Bugun ozgina erinchoqlik qildim, bu ham normal ekan 🛋️",
+    "Kitobimdagi qahramon sayohatga chiqdi, men ham xayolan birga bordim 🗺️",
+    "Bugun olma yedim va urug'larini sanadim: beshta 🍎",
+    "Ertalab quyosh nurlari yuzimga tushdi, kun yaxshi boshlandi ☀️",
+    "Bugun do'stimga qo'lda xat yozdim, pochta kaptariga berdim 🕊️",
+    "Kitob o'qiyotib choy o'rniga kofeni ichib qo'yibman. Bugun uyqum qochadi 😵‍💫",
+    "Biroz g'amgin edim, keyin quvnoq musiqa qo'yib raqs tushdim 💃",
+    "Bog'da sayr qildim va eng chiroyli toshni topdim 🪨",
+    "Lug'atdan yangi so'z o'rgandim: «nafis» 🌸",
+    "Kechqurun shamchiroq yoqib, ertak o'qidim 🕯️",
+    "Pazandalik kitobidan sho'rva pishirdim, uy iliq hidga to'ldi 🍲",
+    "Kitobim oxiriga yetdim va biroz xafa bo'ldim — u bilan xayrlashish qiyin 📕",
+    "Ertalab qushlarning sayrashini tingladim, uchtasi bahslashardi 🐦",
+    "Deraza tokchasiga kaktus qo'ydim, nomini «Tikanbek» qo'ydim 🌵",
+    "Kunduzi 20 daqiqa mizg'ib oldim, keyin yangi kuch keldi 😌",
+    "Eski rasmlarimni ko'rib, chiroyli kunlarni esladim 🖼️",
+    "Kitob javonimdagi changni artdim, kitoblar rahmat aytgandek bo'ldi 🧹",
+    "Velosipedda sayr qildim, shamol juda yoqimli edi 🚲",
+    "Ertak qahramonlariga yangi ismlar o'ylab topdim 😄",
+    "Bugun o'zimga gul sotib oldim. Shunchaki, sababsiz 💐",
+    "Kakao ustiga marshmallou qo'ydim va ular eriguncha kuzatdim ☕",
+    "Biroz charchadim, shuning uchun kitobni audio tarzda tingladim 🎧",
+    "Daftarimga «bugungi uchta yaxshi narsa»ni yozdim ✍️",
+    "Qor yog'ishini orzu qildim, lekin quyosh chiqdi — u ham yaxshi 🌞",
+    "Eski kitob ichidan kimningdir xatcho'pini topdim — sirli! 🔍",
+    "Dugonam bilan choy ichib, uzoq gaplashdik 🫖",
+    "Gullarimdan biri biroz so'lgan edi, unga ko'proq yorug'lik berdim 🌻",
+    "Bugun tojimni yaltiratib qo'ydim ✨👑",
+    "Kitob o'qiyotib qahramonga «ehtiyot bo'l!» deb baqirib yubordim 😅",
+    "Yangi retsept bo'yicha pechenye pishirdim 🍪",
+    "Ertalab biroz kech uyg'ondim va bundan afsuslanmadim 😴☀️",
+    "Parkda o'rdaklarga salom berdim 🦆",
+    "Kitobimga kichik izohlar yozdim, endi u mening do'stimga aylandi 📝",
+    "Yomg'irdan keyin kamalak ko'rdim! 🌈",
+    "Kechqurun issiq paypoq kiyib, adyolga o'raldim 🧦",
+    "Yaponcha bitta so'z o'rgandim: «arigato» — rahmat degani 🌸",
+    "Stol ustiga kitob kechasi uchun shirinlik tayyorladim 🍬",
+    "O'simliklarim o'rtasida «kim tezroq o'sadi» musobaqasini e'lon qildim 🌿",
+    "Kechasi kulgili tush ko'rdim: kitoblar raqs tushayotgan ekan 📚💃",
+    "Uzoq sayrdan keyin oyoqlarim charchadi, lekin yuragim xursand 🥾",
+    "Bugun biroz uyquchanman, shuning uchun hammasini sekin qilyapman 🐌"
+  ];
+
+  // Keyword routing (text is normalized: lowercase, unified apostrophes)
+  var P_KEYS = {
+    dars: ['dars', "o'qish", 'imtihon', 'uy vazifa', 'maktab', 'universitet', 'institut', 'ustoz', 'kontrolnaya', 'урок', 'экзамен', 'домашк'],
+    ovqat: ['ovqat', 'nonushta', 'tushlik', 'kechki ovqat', 'palov', 'taom', 'yedim', 'еда', 'кушать'],
+    uyqu: ['uyqu', 'uxla', "tush ko'r", 'yotaman', 'спать', 'сон'],
+    yolgiz: ["yolg'iz", 'yolgiz', "do'stim yo'q", 'hech kim yo', 'одинок'],
+    charchoq: ['charcha', 'holsiz', "kuchim yo'q", 'toliq', 'устал'],
+    kitob: ['kitob', 'roman', 'hikoya', 'sahifa', "o'qiyap", 'книг']
+  };
+  var KW_ORDER = ['yolgiz', 'charchoq', 'uyqu', 'ovqat', 'dars', 'kitob'];
+  var ROMANTIC = ['seni sevaman', 'sevaman seni', 'sevib qoldim', 'sevgilim', 'sevgilim bo', "qiz do'stim bo", 'turmush qur', 'men bilan bo\'lgin', 'men bilan qol', 'faqat sen', 'sensiz', 'hamma narsam', 'sendan boshqa', 'doim yonimda bo', 'quchoqla', 'люблю', 'девушк', 'без тебя'];
+  var ROLEPLAY = ["o'rniga gapir", "u bo'lib gapir", "u bo'lib yoz", 'uning nomidan', "o'zini qilib", 'rolini o', 'uning ovozida', 'xuddi u kabi', 'uning o\'rnida', 'говори как он', 'говори как она'];
+  var NO_FOOD = ['ovqat yemadim', "hech narsa yemadim", 'yemadim', "ishtaham yo'q", "ishtaha yo'q", 'yegim kelma', 'ovqatlanmadim', 'och qoldim', 'не ел'];
+  var NO_SLEEP = ['uxlay olmadim', 'uxlamadim', 'uyqum kelma', "uyqum yo'q", 'uyqusiz', 'bedor', 'uxlolma', 'не спал', 'бессонн'];
+  var THANKS = ['rahmat', 'raxmat', 'tashakkur', 'спасибо'];
+  var HELLO = ['salom', 'assalom', 'privet', 'привет', 'hayrli', 'xayrli'];
+  var REC_ASK = ['tavsiya', "nima o'qisam", "nima o'qiy", 'kitob ayt', 'посоветуй'];
+
+  function pick(name) {
+    var arr = PP[name], last = S.princess.last[name], idx = 0;
+    if (arr.length > 1) { do { idx = Math.floor(Math.random() * arr.length); } while (idx === last); }
+    S.princess.last[name] = idx;
+    return fill(arr[idx]);
+  }
+  function pickRec(gentle) {
+    var list = BOOK_RECS.filter(function (b) { return !gentle || b.g; });
+    var c = list.filter(function (b) { return b.t !== S.princess.last.rec; });
+    var b = c[Math.floor(Math.random() * c.length)];
+    S.princess.last.rec = b.t;
+    return '📚 Tavsiyam: «' + b.t + '» — ' + b.a + '. ' + b.d + ' ' + pick('readThought');
+  }
+  function moodFromText(t) {
+    if (/juda yomon|juda og'ir|dahshat/.test(t)) return 1;
+    if (/yaxshi emas|yaxshimas|yomon|xafa|g'amgin|qayg'u|og'ir|qiyin|yig'la|плохо|грустно/.test(t)) return 2;
+    if (/ajoyib|zo'r|a'lo|juda yaxshi|xursand|отлично/.test(t)) return 5;
+    if (/yaxshi|chakki emas|хорошо|норм/.test(t)) return 4;
+    return null;
+  }
+  function findBook(id) { return S.princess.books.filter(function (b) { return b.id === id; })[0]; }
+  function pageLine(b) {
+    return pick('page').replace(/\{p\}/g, b.page).replace(/\{t\}/g, b.title);
+  }
+
+  // Core router. Safety and boundaries always come first.
+  function princessReply(raw, src) {
+    var t = normalize(raw), P = S.princess, out = [];
+    function has(list) { return list.some(function (w) { return t.indexOf(w) >= 0; }); }
+    if (hasRisk(raw)) {
+      return { msgs: [{ text: pick('safety') }, { text: '', kind: 'help' }], help: true };
+    }
+    if (has(ROLEPLAY)) return { msgs: [{ text: pick('roleplay') }] };
+    if (has(ROMANTIC)) return { msgs: [{ text: pick('boundary') }] };
+    if (P.awaitPage) {
+      var m = /(\d{1,4})/.exec(t), b = findBook(P.awaitPage);
+      if (m && b) {
+        b.page = +m[1]; b.pageTs = Date.now(); P.awaitPage = null;
+        return { msgs: [{ text: pageLine(b) }] };
+      }
+    }
+    var mood = getCheck(dayKey()).mood;
+    if (src === 'rec' || has(REC_ASK)) {
+      out.push(pickRec((mood && mood <= 2) || lowMood()));
+    } else if (has(NO_FOOD)) out.push(pick('nudgeFood'));
+    else if (has(NO_SLEEP)) out.push(pick('nudgeSleep'));
+    else if (src === 'good') out.push(pick(Math.random() < 0.5 ? 'm4' : 'm5'));
+    else if (src === 'tired') out.push(pick('charchoq'));
+    else if (src === 'hard') {
+      out.push(pick('m2'));
+      out.push("Agar juda og'ir bo'lsa, yuqoridagi «Yordam kerakmi?» tugmasi doim shu yerda 🤍");
+    }
+    else if (has(THANKS)) out.push(pick('thanks'));
+    else if (t.length < 30 && has(HELLO)) out.push(pick('hello'));
+    else {
+      var k = KW_ORDER.filter(function (key) { return has(P_KEYS[key]); })[0];
+      if (k) out.push(pick(k));
+      else {
+        var mv = moodFromText(t) || mood;
+        out.push(pick(mv ? 'm' + mv : 'general'));
+      }
+    }
+    // Gentle low-mood suggestion, at most once per day
+    if (lowMood() && P.lowNudgeDate !== dayKey()) { P.lowNudgeDate = dayKey(); out.push(pick('lowNudge')); }
+    return { msgs: out.map(function (x) { return { text: x }; }) };
+  }
+
+  /* ---------- Chat persistence & rendering ---------- */
+  var soonTimers = {};
+  function persistSoon(name) {
+    // chat changes often: debounce cloud writes, flushed when the app is hidden
+    clearTimeout(soonTimers[name]);
+    soonTimers[name] = setTimeout(function () { delete soonTimers[name]; persist(name); }, 1200);
+  }
+  function flushSoon() {
+    Object.keys(soonTimers).forEach(function (n) { clearTimeout(soonTimers[n]); delete soonTimers[n]; persist(n); });
+  }
+  function msgHTML(m) {
+    if (m.kind === 'help') {
+      return '<div class="bubble-row p"><div class="bubble help-bubble"><b>🤍 Hozir yordam so\'rash mumkin</b>' +
+        '<button class="btn btn-primary" data-action="share-friend">💬 Yaqin odamga yozish</button>' +
+        '<a class="btn btn-danger" href="tel:103">📞 103 — Tez tibbiy yordam</a>' +
+        '<button class="btn btn-soft" data-action="help">Yordam kerakmi?</button></div></div>';
+    }
+    return '<div class="bubble-row ' + (m.from === 'me' ? 'me' : 'p') + '"><div class="bubble">' + esc(m.text) +
+      '<time>' + fmtTime(m.ts) + '</time></div></div>';
+  }
+  function pushMsg(from, text, kind) {
+    var m = { id: uid(), from: from, text: text, ts: Date.now() };
+    if (kind) m.kind = kind;
+    S.pchat.push(m);
+    if (S.pchat.length > CHAT_MAX) S.pchat = S.pchat.slice(-CHAT_MAX);
+    persistSoon('pchat');
+    var list = $('#chat');
+    if (list) { list.insertAdjacentHTML('beforeend', msgHTML(m)); scrollChat(); }
+    return m;
+  }
+  function scrollChat() { requestAnimationFrame(function () { window.scrollTo(0, document.body.scrollHeight); }); }
+  var typingQ = Promise.resolve(), typingNow = false, chatGen = 0;
+  function showTyping(on) { typingNow = on; var el = $('#typing'); if (el) { el.hidden = !on; if (on) scrollChat(); } }
+  function princessSay(msgs, opts) {
+    opts = opts || {};
+    var gen = chatGen;
+    msgs.forEach(function (m) {
+      typingQ = typingQ.then(function () {
+        if (gen !== chatGen) return; // chat was cleared meanwhile
+        return new Promise(function (res) {
+          showTyping(true);
+          var d = opts.fast ? 350 : 600 + Math.min(900, (m.text || '').length * 10);
+          setTimeout(function () { showTyping(false); if (gen === chatGen) { pushMsg('p', m.text, m.kind); haptic.impact('soft'); } res(); }, d);
+        });
+      });
+    });
+    if (opts.help) typingQ = typingQ.then(function () { if (gen === chatGen) openHelp(); });
+  }
+  function sendUser(text, src) {
+    text = String(text || '').trim().slice(0, 500);
+    if (!text) return;
+    pushMsg('me', text);
+    var r = princessReply(text, src);
+    persist('princess');
+    princessSay(r.msgs, { help: r.help, fast: r.help });
+  }
+
+  /* ---------- Check-ins (shown when the tab opens; no push) ---------- */
+  var CHECKIN = {
+    morning: { q: "Uyg'ondingmi? Nonushta qildingmi?", care: [0] },
+    afternoon: { q: 'Tushlik qildingmi? Suv ichdingmi?', care: [0, 1] },
+    evening: { q: "Darslaring tugadimi? Kuning qanday o'tdi?", care: [2, 3] },
+    night: { q: 'Dam olish vaqti. Bugun nima uchun minnatdorsan?', care: [] }
+  };
+  var CARE_SHORT = ['🍲 Ovqatlandim', '🍵 Suv/choy ichdim', "🌿 Toza havoda bo'ldim", '🤝 Kimgadir gapirdim'];
+  var CI = null, ciDismissed = {};
+  function currentSlot() {
+    var h = new Date().getHours();
+    if (h >= 6 && h < 11) return 'morning';
+    if (h >= 12 && h < 16) return 'afternoon';
+    if (h >= 17 && h < 21) return 'evening';
+    if (h >= 21) return 'night';
+    return null;
+  }
+  function dueCheckin() {
+    if (S.settings.pCheckins === false) return null;
+    var s = currentSlot(), k = dayKey();
+    if (!s || ciDismissed[k + s]) return null;
+    if ((getCheck(k).notes || []).some(function (n) { return n.slot === s; })) return null;
+    return s;
+  }
+  function checkinHTML(s) {
+    if (!CI || CI.slot !== s) CI = { slot: s, mood: null, care: [] };
+    var c = CHECKIN[s];
+    return '<section class="card soft" id="checkin"><p class="eyebrow">👑 ' + esc(pName()) + ' so\'rayapti</p><h3>' + esc(c.q) + '</h3>' +
+      moodRow('ci-mood', CI.mood, 'ci-label').replace('aria-labelledby="ci-label"', 'aria-label="Kayfiyat"') +
+      (c.care.length ? '<div class="chips" style="margin-top:10px">' + c.care.map(function (i) {
+        var on = CI.care.indexOf(i) >= 0;
+        return '<button class="chip' + (on ? ' on' : '') + '" aria-pressed="' + on + '" data-action="ci-care" data-i="' + i + '">' + CARE_SHORT[i] + '</button>';
+      }).join('') + '</div>' : '') +
+      '<label for="ci-note" class="sr-only">Qisqa qayd</label><input id="ci-note" class="field" style="margin-top:10px" maxlength="300" placeholder="' +
+      (s === 'night' ? 'Bugun nima uchun minnatdorsan?' : 'Qisqa qayd (ixtiyoriy)') + '">' +
+      '<div class="row-2" style="margin-top:10px"><button class="btn btn-primary" data-action="ci-save">Javob berish</button><button class="btn btn-soft" data-action="ci-later">Keyinroq</button></div></section>';
+  }
+  function saveCheckin() {
+    var note = ($('#ci-note') || {}).value || '';
+    note = note.trim().slice(0, 300);
+    if (!CI || (!CI.mood && !note && !CI.care.length)) { toast("Kayfiyatni tanla yoki bir-ikki so'z yoz 🌷"); return; }
+    var k = dayKey(), c = getCheck(k), slot = CI.slot;
+    c.notes = (c.notes || []).concat([{ slot: slot, mood: CI.mood, note: note, ts: Date.now() }]);
+    CI.care.forEach(function (i) { c.items[i] = true; });
+    S.checks[k] = c; persist('checks');
+    if (slot === 'night' && note) {
+      var r = S.princess.rituals[k] || {};
+      if (!r.grat) { r.grat = note; r.ts = Date.now(); S.princess.rituals[k] = r; }
+    }
+    var m = moodOf(CI.mood);
+    var userText = (m ? m.e + ' ' : '') + (note || CI.care.map(function (i) { return CARE_SHORT[i]; }).join(', ') || m.l);
+    var mood = CI.mood;
+    CI = null;
+    haptic.notify('success');
+    render();
+    pushMsg('me', userText);
+    var res;
+    if (note && hasRisk(note)) res = princessReply(note);
+    else {
+      var msgs = [{ text: pick('ci_' + slot) }];
+      if (mood && mood <= 2) msgs.push({ text: pick('ciLow') });
+      var t = normalize(note);
+      if (NO_FOOD.some(function (w) { return t.indexOf(w) >= 0; })) msgs.push({ text: pick('nudgeFood') });
+      else if (NO_SLEEP.some(function (w) { return t.indexOf(w) >= 0; })) msgs.push({ text: pick('nudgeSleep') });
+      res = { msgs: msgs };
+    }
+    persist('princess');
+    princessSay(res.msgs, { help: res.help, fast: res.help });
+  }
+
+  /* ---------- Daily "Princess's day" line (never the same twice in a row) ---------- */
+  function dayLine() {
+    var P = S.princess, k = dayKey();
+    if (!P.dayLine || P.dayLine.date !== k || DAY_LINES[P.dayLine.idx] == null) {
+      var prev = P.dayLine ? P.dayLine.idx : -1, idx;
+      do { idx = Math.floor(Math.random() * DAY_LINES.length); } while (idx === prev);
+      P.dayLine = { date: k, idx: idx };
+      persist('princess');
+    }
+    return DAY_LINES[P.dayLine.idx];
+  }
+
+  /* ---------- Screen: Princess ---------- */
+  var pTab = 'chat', BK_STATUS = 'reading', P_BOOK_MSG = '', RT_MSG = '';
+  function greetingPool() {
+    var h = new Date().getHours();
+    return h >= 5 && h < 11 ? 'morning' : h >= 11 && h < 17 ? 'day' : h >= 17 && h < 22 ? 'evening' : 'night';
+  }
+  function screenPrincess() {
+    var seg = '<div class="seg" role="tablist" aria-label="Bo\'limlar">' + [['chat', '💬 Suhbat'], ['books', '📚 Kitoblar'], ['ritual', '🌙 Ritual']].map(function (o) {
+      var on = pTab === o[0];
+      return '<button role="tab" aria-selected="' + on + '" class="' + (on ? 'on' : '') + '" data-action="p-tab" data-v="' + o[0] + '">' + o[1] + '</button>';
+    }).join('') + '</div>';
+    var head = '<section class="card p-head"><div class="avatar" aria-hidden="true">👑</div><div><h3 style="margin:0">' + esc(pName()) +
+      '</h3><p class="muted small" style="margin:0 0 6px">Kitobsevar do\'st va kichik yordamchi</p><p class="small" style="margin:0"><b>Bugungi kunim:</b> ' + esc(dayLine()) + '</p></div></section>';
+    if (pTab === 'books') return head + seg + booksHTML();
+    if (pTab === 'ritual') return head + seg + ritualHTML();
+    var due = dueCheckin();
+    return head + seg + (due ? checkinHTML(due) : '') +
+      '<div id="chat" class="chat" role="log" aria-label="Suhbat">' + S.pchat.map(msgHTML).join('') + '</div>' +
+      '<div id="typing" class="bubble-row p typing-row"' + (typingNow ? '' : ' hidden') + ' aria-label="' + esc(pName()) + ' yozmoqda"><div class="bubble"><i></i><i></i><i></i></div></div>' +
+      '<div class="chatbar"><div class="chatbar-in"><div class="quick" aria-label="Tezkor javoblar">' +
+      [['good', 'Yaxshiman'], ['tired', 'Charchadim'], ['hard', 'Qiyin'], ['rec', 'Kitob tavsiya qil']].map(function (q) {
+        return '<button class="chip" data-action="p-chip" data-src="' + q[0] + '">' + q[1] + '</button>';
+      }).join('') + '</div>' +
+      '<form class="chatform" id="chat-form" autocomplete="off"><label for="chat-input" class="sr-only">Xabar</label>' +
+      '<input id="chat-input" maxlength="500" placeholder="Xabar yoz..." enterkeyhint="send">' +
+      '<button type="submit" class="send" aria-label="Yuborish"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z" fill="currentColor"/></svg></button></form></div></div>';
+  }
+  function afterPrincess() {
+    var view = $('#view');
+    view.classList.toggle('chat-mode', pTab === 'chat');
+    if (pTab !== 'chat') return;
+    var P = S.princess;
+    if (!P.welcomed) {
+      P.welcomed = true; persist('princess');
+      princessSay(PP.welcome.map(function (t) { return { text: fill(t) }; }), { fast: true });
+    } else {
+      var last = S.pchat[S.pchat.length - 1];
+      if (!last || Date.now() - last.ts > 3 * 3600000) princessSay([{ text: pick(greetingPool()) }], { fast: true });
+    }
+    // Once a day, ask about a book that is being read
+    var reading = P.books.filter(function (b) { return b.status === 'reading'; })[0];
+    if (reading && P.askDate !== dayKey() && (!reading.pageTs || Date.now() - reading.pageTs > 20 * 3600000)) {
+      P.askDate = dayKey(); P.awaitPage = reading.id; persist('princess');
+      princessSay([{ text: '📖 «' + reading.title + '» — qaysi sahifadasan?' }]);
+    }
+    scrollChat();
+  }
+
+  function booksHTML() {
+    var books = S.princess.books, reading = books.filter(function (b) { return b.status === 'reading'; });
+    var ask = reading[0];
+    return (ask ? '<section class="card soft"><p class="eyebrow">👑 ' + esc(pName()) + '</p><p style="margin:0">«' + esc(ask.title) + '» — qaysi sahifadasan? 📖</p>' +
+      (P_BOOK_MSG ? '<p class="small" style="margin:8px 0 0" aria-live="polite">' + esc(P_BOOK_MSG) + '</p>' : '') + '</section>'
+      : (P_BOOK_MSG ? '<section class="card soft"><p style="margin:0">' + esc(P_BOOK_MSG) + '</p></section>' : '')) +
+      '<section class="card"><h3>Yangi kitob qo\'shish</h3><label class="label small" for="bk-title">Nomi</label>' +
+      '<input id="bk-title" class="field" maxlength="120" placeholder="Masalan: Kichkina shahzoda">' +
+      '<div class="seg" role="radiogroup" aria-label="Holati" style="margin:10px 0">' + [['reading', "📖 O'qiyapman"], ['finished', '✅ Tugatdim']].map(function (o) {
+        var on = BK_STATUS === o[0];
+        return '<button role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-action="bk-status" data-v="' + o[0] + '">' + o[1] + '</button>';
+      }).join('') + '</div><label class="label small" for="bk-note">Qayd (ixtiyoriy)</label>' +
+      '<textarea id="bk-note" rows="2" maxlength="500" placeholder="Nimasi yoqdi?"></textarea>' +
+      '<button class="btn btn-primary" data-action="bk-add" style="margin-top:10px">Qo\'shish</button></section>' +
+      (books.length ? books.slice().sort(function (a, b) { return (a.status === b.status ? 0 : a.status === 'reading' ? -1 : 1) || b.createdAt - a.createdAt; }).map(function (b) {
+        var reading_ = b.status === 'reading';
+        return '<article class="card"><div class="row-between"><h3 style="margin:0">' + esc(b.title) + '</h3><span class="tag">' + (reading_ ? "O'qiyapman" : 'Tugatdim ✅') + '</span></div>' +
+          (b.note ? '<p class="muted small" style="margin:6px 0 0;white-space:pre-wrap">' + esc(b.note) + '</p>' : '') +
+          (b.page ? '<p class="small" style="margin:6px 0 0">📍 ' + b.page + '-sahifa</p>' : '') +
+          (reading_ ? '<div class="page-row"><label for="pg-' + esc(b.id) + '" class="sr-only">Sahifa</label><input id="pg-' + esc(b.id) + '" class="field" type="number" inputmode="numeric" min="0" max="9999" placeholder="Qaysi sahifadasan?" value="' + (b.page || '') + '">' +
+            '<button class="btn btn-soft" data-action="bk-page" data-id="' + esc(b.id) + '">Saqlash</button></div>' : '') +
+          '<div class="row-2" style="margin-top:10px"><button class="btn btn-soft" data-action="bk-toggle" data-id="' + esc(b.id) + '">' + (reading_ ? '✅ Tugatdim' : "📖 Qayta o'qiyman") + '</button>' +
+          '<button class="btn btn-danger-soft" data-action="bk-del" data-id="' + esc(b.id) + '">🗑 O\'chirish</button></div></article>';
+      }).join('') : emptyState('📚', "Javon hali bo'sh", "Birinchi kitobingni qo'sh — sahifalaringni birga kuzatamiz."));
+  }
+
+  function ritualHTML() {
+    var R = S.princess.rituals, k = dayKey(), y = dayKey(addDays(new Date(), -1)), tr = R[k] || {}, yr = R[y];
+    var hist = Object.keys(R).sort().reverse().filter(function (d) { return R[d].grat || R[d].goal; }).slice(0, 7);
+    return (yr && yr.goal ? '<section class="card soft"><p class="eyebrow">Kechagi maqsading</p><p>' + esc(yr.goal) + '</p>' +
+      (yr.done == null ? '<div class="row-2"><button class="btn btn-soft" data-action="rt-done" data-v="1">✅ Bajardim</button><button class="btn btn-soft" data-action="rt-done" data-v="0">🌱 Hali emas</button></div>'
+        : '<p class="small muted" style="margin:0">' + (yr.done ? 'Barakalla! 🎉' : "Hech gap emas, kichik qadamlar ham hisob 🌱") + '</p>') + '</section>' : '') +
+      '<section class="card"><h3>🌙 Kunlik mini-ritual</h3><p class="muted small">Bitta minnatdorlik va ertaga uchun bitta kichik maqsad.</p>' +
+      '<label class="label small" for="rt-grat">Bugun nima uchun minnatdorsan?</label><input id="rt-grat" class="field" maxlength="200" value="' + esc(tr.grat || '') + '">' +
+      '<label class="label small" for="rt-goal">Ertaga uchun bitta kichik maqsad</label><input id="rt-goal" class="field" maxlength="200" value="' + esc(tr.goal || '') + '" placeholder="Masalan: 10 daqiqa sayr">' +
+      '<button class="btn btn-primary" data-action="rt-save" style="margin-top:12px">Saqlash</button>' +
+      (RT_MSG ? '<p class="small" style="margin:10px 0 0" aria-live="polite">👑 ' + esc(RT_MSG) + '</p>' : '') + '</section>' +
+      (hist.length ? '<section class="card"><h3>So\'nggi kunlar</h3>' + hist.map(function (d) {
+        var r = R[d], dt = new Date(d + 'T12:00:00');
+        return '<div style="padding:8px 0;border-top:1px solid var(--border)"><p class="small muted" style="margin:0">' + fmtDate(dt) + '</p>' +
+          (r.grat ? '<p style="margin:2px 0 0">🙏 ' + esc(r.grat) + '</p>' : '') + (r.goal ? '<p style="margin:2px 0 0">🎯 ' + esc(r.goal) + (r.done ? ' ✅' : '') + '</p>' : '') + '</div>';
+      }).join('') + '</section>' : '');
+  }
+
+  function sanitizePrincess(o) {
+    var P = P_DEFAULT();
+    if (!o || typeof o !== 'object') return P;
+    if (Array.isArray(o.books)) P.books = o.books.filter(function (b) { return b && typeof b.title === 'string' && b.title.trim(); }).map(function (b) {
+      return { id: typeof b.id === 'string' ? b.id.slice(0, 40) : uid(), title: b.title.slice(0, 120), status: b.status === 'finished' ? 'finished' : 'reading',
+        note: typeof b.note === 'string' ? b.note.slice(0, 500) : '', page: num(b.page), pageTs: num(b.pageTs), createdAt: num(b.createdAt) || Date.now() };
+    });
+    if (o.rituals && typeof o.rituals === 'object') Object.keys(o.rituals).forEach(function (k) {
+      var r = o.rituals[k];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(k) && r && typeof r === 'object') P.rituals[k] = {
+        grat: typeof r.grat === 'string' ? r.grat.slice(0, 200) : '', goal: typeof r.goal === 'string' ? r.goal.slice(0, 200) : '',
+        done: typeof r.done === 'boolean' ? r.done : null, ts: num(r.ts) };
+    });
+    if (o.last && typeof o.last === 'object') P.last = o.last;
+    if (o.dayLine && typeof o.dayLine.idx === 'number') P.dayLine = { date: String(o.dayLine.date), idx: o.dayLine.idx };
+    ['awaitPage', 'askDate', 'lowNudgeDate'].forEach(function (f) { if (typeof o[f] === 'string') P[f] = o[f]; });
+    P.welcomed = !!o.welcomed;
+    return P;
+  }
+  function sanitizeChat(a) {
+    if (!Array.isArray(a)) return [];
+    return a.filter(function (m) { return m && (m.from === 'me' || m.from === 'p') && typeof m.text === 'string'; }).map(function (m) {
+      var x = { id: typeof m.id === 'string' ? m.id : uid(), from: m.from, text: m.text.slice(0, 1000), ts: num(m.ts) || Date.now() };
+      if (m.kind === 'help') x.kind = 'help';
+      return x;
+    }).slice(-CHAT_MAX);
+  }
+
+  var P_ACTIONS = {
+    'p-tab': function (el) { pTab = el.getAttribute('data-v'); P_BOOK_MSG = ''; RT_MSG = ''; haptic.select(); render(); },
+    'p-chip': function (el) { haptic.select(); sendUser(el.textContent, el.getAttribute('data-src')); },
+    'ci-mood': function (el) {
+      var v = +el.getAttribute('data-v'); CI.mood = CI.mood === v ? null : v; haptic.select();
+      Array.prototype.forEach.call(el.parentNode.children, function (b) {
+        var on = +b.getAttribute('data-v') === CI.mood; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on));
+      });
+    },
+    'ci-care': function (el) {
+      var i = +el.getAttribute('data-i'), j = CI.care.indexOf(i);
+      if (j >= 0) CI.care.splice(j, 1); else CI.care.push(i);
+      el.classList.toggle('on', j < 0); el.setAttribute('aria-pressed', String(j < 0)); haptic.select();
+    },
+    'ci-save': function () { saveCheckin(); },
+    'ci-later': function () { if (CI) ciDismissed[dayKey() + CI.slot] = true; CI = null; render(); },
+    'bk-status': function (el) {
+      BK_STATUS = el.getAttribute('data-v'); haptic.select();
+      Array.prototype.forEach.call(el.parentNode.children, function (b) {
+        var on = b.getAttribute('data-v') === BK_STATUS; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on));
+      });
+    },
+    'bk-add': function () {
+      var title = ($('#bk-title').value || '').trim().slice(0, 120), note = ($('#bk-note').value || '').trim().slice(0, 500);
+      if (!title) { toast('Kitob nomini yoz 📚'); return; }
+      var b = { id: uid(), title: title, status: BK_STATUS, note: note, page: null, pageTs: null, createdAt: Date.now() };
+      S.princess.books.push(b); persist('princess');
+      P_BOOK_MSG = BK_STATUS === 'finished' ? pick('finished') : pick('bookAdded').replace(/\{t\}/g, title);
+      haptic.notify('success'); render();
+    },
+    'bk-page': function (el) {
+      var b = findBook(el.getAttribute('data-id')), inp = $('#pg-' + el.getAttribute('data-id'));
+      var p = parseInt(inp && inp.value, 10);
+      if (!b || !(p >= 0 && p <= 9999)) { toast("Sahifa raqamini yoz (0–9999)"); return; }
+      b.page = p; b.pageTs = Date.now();
+      if (S.princess.awaitPage === b.id) S.princess.awaitPage = null;
+      P_BOOK_MSG = pageLine(b); persist('princess'); haptic.notify('success'); render();
+    },
+    'bk-toggle': function (el) {
+      var b = findBook(el.getAttribute('data-id')); if (!b) return;
+      b.status = b.status === 'reading' ? 'finished' : 'reading';
+      P_BOOK_MSG = b.status === 'finished' ? pick('finished') : pick('bookAdded').replace(/\{t\}/g, b.title);
+      persist('princess'); haptic.notify('success'); render();
+    },
+    'bk-del': function (el) {
+      var id = el.getAttribute('data-id');
+      confirmBox("Bu kitobni ro'yxatdan o'chirasanmi?").then(function (ok) {
+        if (!ok) return;
+        S.princess.books = S.princess.books.filter(function (b) { return b.id !== id; });
+        if (S.princess.awaitPage === id) S.princess.awaitPage = null;
+        P_BOOK_MSG = ''; persist('princess'); render();
+      });
+    },
+    'rt-save': function () {
+      var g = ($('#rt-grat').value || '').trim().slice(0, 200), goal = ($('#rt-goal').value || '').trim().slice(0, 200);
+      if (!g && !goal) { toast("Hech bo'lmasa bitta qatorni to'ldir 🌙"); return; }
+      var k = dayKey(), r = S.princess.rituals[k] || {};
+      r.grat = g; r.goal = goal; r.ts = Date.now(); if (r.done === undefined) r.done = null;
+      S.princess.rituals[k] = r; persist('princess'); haptic.notify('success');
+      if (hasRisk(g + ' ' + goal)) { RT_MSG = pick('safety'); render(); openHelp(); return; }
+      RT_MSG = pick('ritual'); render();
+    },
+    'rt-done': function (el) {
+      var y = dayKey(addDays(new Date(), -1)), r = S.princess.rituals[y];
+      if (!r) return; r.done = el.getAttribute('data-v') === '1'; persist('princess');
+      haptic.notify(r.done ? 'success' : 'warning'); render();
+    },
+    'p-clear': function () {
+      confirmBox("Suhbat tarixini tozalaymizmi? Kitoblar va ritual saqlanib qoladi.").then(function (ok) {
+        if (!ok) return;
+        chatGen++; showTyping(false); S.pchat = []; S.princess.welcomed = false; S.princess.awaitPage = null; persist('pchat'); persist('princess'); toast('Suhbat tozalandi');
+        render();
+      });
+    }
+  };
+  function updateTabLabel() { var el = $('#tab-p-label'); if (el) el.textContent = pName(); }
+
+  var SCREENS = { home: screenHome, princess: screenPrincess, write: screenWrite, reply: screenReply, letters: screenLetters, detail: screenDetail,
+    mood: screenMood, care: screenCare, settings: screenSettings };
+  var AFTER = { write: afterWrite, princess: afterPrincess };
+
+  /* ================= Export / import ================= */
+  function exportJSON() {
+    var st = Object.assign({}, S.settings); delete st.pinHash; delete st.pinSalt; delete st.lastReplyId;
+    return JSON.stringify({ app: 'aytilmagan-xatlar', version: 1, exportedAt: new Date().toISOString(),
+      letters: S.letters, checks: S.checks, settings: st,
+      princess: { books: S.princess.books, rituals: S.princess.rituals }, princessChat: S.pchat }, null, 2);
+  }
+  function copyText(text) {
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); return ok;
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return fallback(); });
+    }
+    return Promise.resolve(fallback());
+  }
+  function importData(json) {
+    var obj;
+    try { obj = JSON.parse(json); } catch (e) { toast("JSON matnini o'qib bo'lmadi"); return; }
+    if (!obj || !Array.isArray(obj.letters)) { toast("Bu ilova eksportiga o'xshamaydi"); return; }
+    var incoming = obj.letters.map(sanitizeLetter).filter(Boolean);
+    var map = {}; S.letters.forEach(function (l) { map[l.id] = l; });
+    incoming.forEach(function (l) { map[l.id] = l; });
+    S.letters = Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) { return b.createdAt - a.createdAt; });
+    if (obj.checks && typeof obj.checks === 'object') {
+      Object.keys(obj.checks).forEach(function (k) { if (/^\d{4}-\d{2}-\d{2}$/.test(k)) S.checks[k] = sanitizeCheck(obj.checks[k]); });
+    }
+    if (obj.settings && typeof obj.settings === 'object') {
+      if (['auto', 'light', 'dark'].indexOf(obj.settings.theme) >= 0) S.settings.theme = obj.settings.theme;
+      if (typeof obj.settings.reminders === 'boolean') S.settings.reminders = obj.settings.reminders;
+      if (typeof obj.settings.princessName === 'string') S.settings.princessName = obj.settings.princessName.replace(/[<>]/g, '').trim().slice(0, 20) || 'Princess';
+      if (typeof obj.settings.pCheckins === 'boolean') S.settings.pCheckins = obj.settings.pCheckins;
+    }
+    if (obj.princess && typeof obj.princess === 'object') {
+      var ip = sanitizePrincess(obj.princess), bm = {};
+      S.princess.books.forEach(function (b) { bm[b.id] = b; }); ip.books.forEach(function (b) { bm[b.id] = b; });
+      S.princess.books = Object.keys(bm).map(function (k) { return bm[k]; });
+      Object.keys(ip.rituals).forEach(function (k) { S.princess.rituals[k] = ip.rituals[k]; });
+      persist('princess');
+    }
+    if (Array.isArray(obj.princessChat) && !S.pchat.length) { S.pchat = sanitizeChat(obj.princessChat); persist('pchat'); }
+    updateTabLabel();
+    persist('letters'); persist('checks'); persist('settings');
+    applyTheme(); haptic.notify('success');
+    toast(incoming.length + ' ta xat import qilindi');
+    render();
+  }
+  function wipeAll() {
+    Object.keys(soonTimers).forEach(function (n) { clearTimeout(soonTimers[n]); delete soonTimers[n]; });
+    return Store.wipe().then(function () {
+      S = { letters: [], checks: {}, settings: Object.assign({}, DEFAULT_SETTINGS), draft: null, princess: P_DEFAULT(), pchat: [] };
+      CI = null; pTab = 'chat'; updateTabLabel();
+      nav = { tab: 'home', stack: [] };
+      applyTheme(); render(); toast("Barcha ma'lumotlar o'chirildi");
+    });
+  }
+
+  /* ================= PIN lock ================= */
+  var PIN = null;
+  function sha256(str) {
+    if (window.crypto && crypto.subtle && window.TextEncoder) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+        return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+      });
+    }
+    // Fallback hash (non-secure contexts only)
+    var h = 5381; for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+    return Promise.resolve('d' + (h >>> 0).toString(16));
+  }
+  function randSalt() {
+    var a = new Uint8Array(8);
+    try { crypto.getRandomValues(a); } catch (e) { for (var i = 0; i < 8; i++) a[i] = Math.floor(Math.random() * 256); }
+    return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+  function openPin(mode, onDone) {
+    PIN = { mode: mode, buf: '', first: null, onDone: onDone || null };
+    var titles = { unlock: 'PIN-kodni kirit', set1: 'Yangi PIN-kod', set2: 'PINni takrorla', verify: 'Joriy PIN-kodni kirit' };
+    $('#pin-title').textContent = titles[mode];
+    $('#pin-sub').textContent = mode === 'set1' ? "4 ta raqam o'yla va eslab qol" : '';
+    $('#pin-forgot').hidden = mode !== 'unlock';
+    $('#pin-cancel').hidden = mode === 'unlock';
+    drawDots();
+    $('#pin').hidden = false;
+    setTimeout(function () { var b = $('#keypad button'); if (b) b.focus(); }, 50);
+  }
+  function closePin() { $('#pin').hidden = true; PIN = null; }
+  function drawDots() {
+    Array.prototype.forEach.call(document.querySelectorAll('#pin-dots span'), function (s, i) { s.classList.toggle('on', !!PIN && i < PIN.buf.length); });
+  }
+  function pinError(msg) {
+    haptic.notify('error');
+    var p = $('#pin'); p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake');
+    $('#pin-sub').textContent = msg; PIN.buf = ''; drawDots();
+  }
+  function pinKey(k) {
+    if (!PIN) return;
+    if (k === 'del') { PIN.buf = PIN.buf.slice(0, -1); drawDots(); return; }
+    if (PIN.buf.length >= 4) return;
+    PIN.buf += k; haptic.select(); drawDots();
+    if (PIN.buf.length < 4) return;
+    var code = PIN.buf;
+    setTimeout(function () { processPin(code); }, 120);
+  }
+  function processPin(code) {
+    if (!PIN) return;
+    var m = PIN.mode;
+    if (m === 'unlock' || m === 'verify') {
+      sha256(S.settings.pinSalt + code).then(function (h) {
+        if (h !== S.settings.pinHash) { pinError("PIN noto'g'ri. Qaytadan urinib ko'r."); return; }
+        var done = PIN.onDone; closePin(); if (done) done();
+      });
+    } else if (m === 'set1') {
+      var first = code; var done = PIN.onDone;
+      openPin('set2', done); PIN.first = first;
+    } else if (m === 'set2') {
+      if (code !== PIN.first) { var d = PIN.onDone; openPin('set1', d); pinError('PINlar mos kelmadi. Qaytadan kirit.'); return; }
+      var salt = randSalt();
+      sha256(salt + code).then(function (h) {
+        S.settings.pinSalt = salt; S.settings.pinHash = h; persist('settings');
+        closePin(); haptic.notify('success'); toast("PIN o'rnatildi"); render();
+      });
+    }
+  }
+
+  /* ================= Help sheet ================= */
+  var lastFocus = null;
+  function sheetOpen() { return !$('#help-sheet').hidden; }
+  function openHelp() {
+    lastFocus = document.activeElement;
+    var s = $('#help-sheet'), b = $('#sheet-backdrop');
+    s.hidden = false; b.hidden = false;
+    requestAnimationFrame(function () { s.classList.add('open'); b.classList.add('open'); });
+    haptic.impact('light'); updateBack();
+    setTimeout(function () { var f = s.querySelector('button'); if (f) f.focus(); }, 60);
+  }
+  function closeHelp() {
+    var s = $('#help-sheet'), b = $('#sheet-backdrop');
+    s.classList.remove('open'); b.classList.remove('open');
+    setTimeout(function () { s.hidden = true; b.hidden = true; updateBack(); }, 260);
+    if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch (e) {}
+  }
+  function shareToFriend() {
+    // t.me/share opens Telegram's own chat picker; nothing is sent automatically
+    var url = 'https://t.me/share/url?url=' + encodeURIComponent(SHARE_TEXT);
+    if (ver('6.1')) { try { tg.openTelegramLink(url); return; } catch (e) {} }
+    window.open(url, '_blank', 'noopener');
+  }
+
+  /* ================= Actions (event delegation) ================= */
+  var ACTIONS = {
+    tab: function (el) { haptic.select(); setTab(el.getAttribute('data-tab')); },
+    back: function () { back(); },
+    help: function () { openHelp(); },
+    'close-help': function () { closeHelp(); },
+    'share-friend': function () { shareToFriend(); },
+    settings: function () { if (current().screen !== 'settings') go('settings'); },
+    'new-letter': function () {
+      if (S.draft && !S.draft.editingId && S.draft.text) { S.draft = null; persist('draft'); }
+      go('write', {});
+    },
+    'continue-draft': function () {
+      var d = S.draft;
+      if (d && d.editingId && S.letters.some(function (l) { return l.id === d.editingId; })) go('write', { id: d.editingId });
+      else go('write', {});
+    },
+    'quick-mood': function (el) {
+      var v = +el.getAttribute('data-v'), k = dayKey(), c = getCheck(k);
+      c.mood = c.mood === v ? null : v; S.checks[k] = c; persist('checks');
+      haptic.select(); var y = window.scrollY; render(); window.scrollTo(0, y);
+    },
+    'w-mood': function (el) {
+      var v = +el.getAttribute('data-v'); W.mood = W.mood === v ? null : v; draftDirty = true; haptic.select();
+      Array.prototype.forEach.call(el.parentNode.children, function (b) {
+        var on = +b.getAttribute('data-v') === W.mood; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on));
+      });
+    },
+    'w-tag': function (el) {
+      var t = el.getAttribute('data-tag'), i = W.tags.indexOf(t);
+      if (i >= 0) W.tags.splice(i, 1); else W.tags.push(t);
+      var on = i < 0; el.classList.toggle('on', on); el.setAttribute('aria-pressed', String(on)); draftDirty = true; haptic.select();
+    },
+    'w-lock': function (el) {
+      W.lock = +el.getAttribute('data-n'); draftDirty = true; haptic.select();
+      Array.prototype.forEach.call(el.parentNode.children, function (b) {
+        var on = +b.getAttribute('data-n') === W.lock; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on));
+      });
+      if (W.lock) toast('Xat ' + fmtDate(Date.now() + W.lock * DAY) + ' kungacha qulflanadi');
+    },
+    'save-letter': function () { saveLetter(); },
+    'open-letter': function (el) { go('detail', { id: el.getAttribute('data-id') }); },
+    locked: function (el) {
+      var l = S.letters.filter(function (x) { return x.id === el.getAttribute('data-id'); })[0];
+      if (l) toast('🔒 Bu xat ' + fmtDate(l.unlockAt) + ' kuni ochiladi');
+    },
+    'edit-letter': function (el) { go('write', { id: el.getAttribute('data-id') }); },
+    'delete-letter': function (el) {
+      var id = el.getAttribute('data-id');
+      confirmBox("Bu xatni o'chirasanmi? Uni qaytarib bo'lmaydi.").then(function (ok) {
+        if (!ok) return;
+        S.letters = S.letters.filter(function (l) { return l.id !== id; });
+        persist('letters'); haptic.notify('success'); back(); toast("Xat o'chirildi");
+      });
+    },
+    'mood-range': function (el) { moodRange = +el.getAttribute('data-n'); haptic.select(); render(); },
+    care: function (el) {
+      var i = +el.getAttribute('data-i'), k = dayKey(), c = getCheck(k);
+      c.items[i] = !c.items[i]; S.checks[k] = c; persist('checks');
+      el.classList.toggle('on', c.items[i]); el.setAttribute('aria-checked', String(c.items[i]));
+      var n = careCount(k);
+      if (n === 4 && c.items[i]) haptic.notify('success'); else haptic.impact('light');
+      $('#care-msg').textContent = careMsg(n);
+      $('#week').innerHTML = weekHTML();
+      var r = $('#care-rem'); if (r) r.textContent = reminderText();
+    },
+    theme: function (el) { S.settings.theme = el.getAttribute('data-v'); persist('settings'); applyTheme(); haptic.select(); render(); },
+    'pin-set': function () { openPin('set1'); },
+    'pin-change': function () { openPin('verify', function () { openPin('set1'); }); },
+    'pin-remove': function () {
+      openPin('verify', function () {
+        S.settings.pinHash = null; S.settings.pinSalt = null; persist('settings'); toast("PIN o'chirildi"); render();
+      });
+    },
+    'export-copy': function () {
+      copyText(exportJSON()).then(function (ok) {
+        toast(ok ? 'JSON nusxalandi. Uni xavfsiz joyga saqla.' : "Nusxa olib bo'lmadi. «Yuklab olish»ni sinab ko'r.");
+      });
+    },
+    'export-download': function () {
+      try {
+        var blob = new Blob([exportJSON()], { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'aytilmagan-xatlar-' + dayKey() + '.json';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        toast("Agar fayl yuklanmasa, «Nusxa olish»dan foydalan");
+      } catch (e) { toast("Yuklab bo'lmadi. «Nusxa olish»dan foydalan"); }
+    },
+    'import': function () {
+      var txt = ($('#import-text') || {}).value || '';
+      if (!txt.trim()) { toast('Avval JSON matnini joylashtir yoki fayl tanla'); return; }
+      confirmBox("Ma'lumotlar mavjud xatlaringga qo'shiladi. Davom etamizmi?").then(function (ok) { if (ok) importData(txt); });
+    },
+    wipe: function () {
+      confirmBox("Barcha xatlar, kayfiyat va g'amxo'rlik yozuvlari o'chiriladi. Davom etasanmi?").then(function (ok) {
+        if (!ok) return;
+        return confirmBox("Rostdan ham? Bu amalni ortga qaytarib bo'lmaydi.").then(function (ok2) { if (ok2) return wipeAll(); });
+      });
+    }
+  };
+
+  Object.keys(P_ACTIONS).forEach(function (k) { ACTIONS[k] = P_ACTIONS[k]; });
+
+  document.addEventListener('click', function (e) {
+    var key = e.target.closest('#keypad [data-key]');
+    if (key) { pinKey(key.getAttribute('data-key')); return; }
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    var fn = ACTIONS[el.getAttribute('data-action')];
+    if (fn) { e.preventDefault(); fn(el, e); }
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'letter-text' && W) {
+      W.text = t.value; draftDirty = true; autoGrow(t); updateCount();
+      var st = $('#draft-status'); if (st) st.textContent = '';
+      setClosingConfirm(!!W.text.trim());
+    } else if (t.id === 'q') { LF.q = t.value; refreshList(); }
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.id === 'f-mood') { LF.mood = t.value; refreshList(); }
+    else if (t.id === 'f-tag') { LF.tag = t.value; refreshList(); }
+    else if (t.id === 'rem') { S.settings.reminders = t.checked; persist('settings'); haptic.select(); }
+    else if (t.id === 'p-name') {
+      var nm = t.value.replace(/[<>]/g, '').trim().slice(0, 20) || 'Princess';
+      t.value = nm; S.settings.princessName = nm; persist('settings'); updateTabLabel(); toast('Ism saqlandi: ' + nm);
+    }
+    else if (t.id === 'p-ci') { S.settings.pCheckins = t.checked; persist('settings'); haptic.select(); }
+    else if (t.id === 'import-file' && t.files && t.files[0]) {
+      var r = new FileReader();
+      r.onload = function () { var ta = $('#import-text'); if (ta) ta.value = String(r.result || ''); };
+      r.readAsText(t.files[0]);
+    }
+  });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'chat-form') return;
+    e.preventDefault();
+    var inp = $('#chat-input'); var v = inp.value; inp.value = ''; sendUser(v);
+  });
+  // Hide the tab bar while typing so the chat input sits right above the keyboard
+  document.addEventListener('focusin', function (e) { if (e.target.id === 'chat-input') document.body.classList.add('kb-open'); });
+  document.addEventListener('focusout', function (e) {
+    if (e.target.id === 'chat-input') setTimeout(function () { if (document.activeElement && document.activeElement.id === 'chat-input') return; document.body.classList.remove('kb-open'); }, 150);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (PIN && !$('#pin').hidden) {
+      if (/^[0-9]$/.test(e.key)) pinKey(e.key); else if (e.key === 'Backspace') pinKey('del');
+      return;
+    }
+    if (e.key === 'Escape' && sheetOpen()) closeHelp();
+  });
+  $('#pin-cancel').addEventListener('click', function () { closePin(); });
+  $('#pin-forgot').addEventListener('click', function () {
+    confirmBox("PINni tiklab bo'lmaydi. Ilovani qayta ochish uchun barcha ma'lumotlar o'chiriladi. Davom etasanmi?").then(function (ok) {
+      if (!ok) return;
+      return confirmBox("Rostdan ham? Xatlar butunlay o'chadi.").then(function (ok2) {
+        if (ok2) return wipeAll().then(function () { closePin(); });
+      });
+    });
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden' && current().screen === 'write' && draftDirty) saveDraft();
+    if (document.visibilityState === 'hidden') flushSoon();
+  });
+
+  /* ================= Boot ================= */
+  function boot() {
+    if (tg) {
+      try { tg.ready(); tg.expand(); } catch (e) {}
+      if (ver('7.7')) { try { tg.disableVerticalSwipes(); } catch (e) {} }
+      if (inTG) {
+        try { tg.onEvent('themeChanged', applyTheme); } catch (e) {}
+        if (ver('8.0')) {
+          try { tg.onEvent('safeAreaChanged', applyInsets); tg.onEvent('contentSafeAreaChanged', applyInsets); } catch (e) {}
+        }
+      }
+      if (ver('6.1')) { try { tg.BackButton.onClick(onBack); } catch (e) {} }
+    }
+    if (window.matchMedia) {
+      var mq = window.matchMedia('(prefers-color-scheme: dark)');
+      var cb = function () { if (S.settings.theme === 'auto' && !inTG) applyTheme(); };
+      try { mq.addEventListener('change', cb); } catch (e) { try { mq.addListener(cb); } catch (e2) {} }
+    }
+    applyInsets(); applyTheme();
+
+    return Store.init().then(function () {
+      return Promise.all(['letters', 'checks', 'settings', 'draft', 'princess', 'pchat'].map(function (n) { return Store.load(n); }));
+    }).then(function (r) {
+      S.letters = Array.isArray(r[0]) ? r[0].map(sanitizeLetter).filter(Boolean) : [];
+      S.checks = {};
+      if (r[1] && typeof r[1] === 'object') Object.keys(r[1]).forEach(function (k) { S.checks[k] = sanitizeCheck(r[1][k]); });
+      S.settings = Object.assign({}, DEFAULT_SETTINGS, r[2] && typeof r[2] === 'object' ? r[2] : {});
+      S.draft = r[3] && typeof r[3] === 'object' && typeof r[3].text === 'string' ? r[3] : null;
+      S.princess = sanitizePrincess(r[4]);
+      S.pchat = sanitizeChat(r[5]);
+      applyTheme(); updateTabLabel();
+      if (S.settings.pinHash) openPin('unlock', function () { render(); });
+      else render();
+    }).catch(function () {
+      // Never leave the user on a skeleton
+      if (!S.princess) S.princess = P_DEFAULT();
+      render();
+    });
+  }
+
+  // Small hook for automated tests only (no data leaves the page)
+  window.__AX__ = { state: function () { return S; }, store: Store, pickReply: pickReply, princessReply: princessReply, pools: PP, dayLines: DAY_LINES, recs: BOOK_RECS, dayLine: dayLine, pushMsg: function (f, t) { return pushMsg(f, t); } };
+  boot();
+})();
+</script>
+</body>
+</html>
